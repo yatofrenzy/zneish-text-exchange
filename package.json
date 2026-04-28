@@ -1,0 +1,27 @@
+{
+  "name": "zneish-text-exchange",
+  "version": "1.0.0",
+  "description": "Realtime text, link, file, and photo sharing app built with Express and Socket.IO.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "keywords": [
+    "zneish",
+    "websocket",
+    "socket.io",
+    "file-sharing",
+    "realtime"
+  ],
+  "author": "Zneish",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.19.2",
+    "multer": "^2.0.0",
+    "socket.io": "^4.7.5"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Zneish Text Exchange</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="/" aria-label="Zneish Text Exchange home">
+          <span class="brand-mark">Z</span>
+          <span>
+            <strong>Zneish</strong>
+            <small>Text Exchange</small>
+          </span>
+        </a>
+
+        <nav class="nav-actions" aria-label="Main actions">
+          <button class="icon-button" id="copyText" type="button" title="Copy shared text">Copy</button>
+          <button class="icon-button" id="downloadText" type="button" title="Download shared text">Download</button>
+          <button class="icon-button" id="clearAll" type="button" title="Clear shared board">Clear</button>
+          <label class="toggle" title="Toggle dark mode">
+            <input id="themeToggle" type="checkbox" />
+            <span>Dark</span>
+          </label>
+        </nav>
+      </header>
+
+      <main class="workspace">
+        <section class="editor-panel" aria-labelledby="editorTitle">
+          <div class="panel-head">
+            <div>
+              <p class="eyebrow">Realtime room</p>
+              <h1 id="editorTitle">Share text, links, photos, and files instantly</h1>
+            </div>
+            <div class="status-pill">
+              <span class="pulse"></span>
+              <span id="presence">Connecting</span>
+            </div>
+          </div>
+
+          <form class="quick-share" id="quickShare">
+            <input
+              id="quickInput"
+              type="text"
+              autocomplete="off"
+              placeholder="Paste a link or write a quick note"
+              aria-label="Paste a link or write a quick note"
+            />
+            <button type="submit">Share</button>
+          </form>
+
+          <textarea
+            id="sharedText"
+            spellcheck="true"
+            placeholder="Start typing here. Everyone connected to this website sees the same text live..."
+            aria-label="Realtime shared text"
+          ></textarea>
+
+          <div class="drop-zone" id="dropZone">
+            <input id="fileInput" type="file" multiple />
+            <div>
+              <strong>Drop files or photos here</strong>
+              <span>or click to upload up to 25 MB each</span>
+            </div>
+          </div>
+        </section>
+
+        <aside class="share-panel" aria-labelledby="feedTitle">
+          <div class="panel-head compact">
+            <div>
+              <p class="eyebrow">Shared items</p>
+              <h2 id="feedTitle">Live feed</h2>
+            </div>
+            <span class="count" id="itemCount">0</span>
+          </div>
+          <div class="feed" id="feed"></div>
+        </aside>
+      </main>
+    </div>
+
+    <template id="itemTemplate">
+      <article class="feed-item">
+        <div class="item-icon"></div>
+        <div class="item-body">
+          <div class="item-title"></div>
+          <div class="item-meta"></div>
+          <div class="item-preview"></div>
+        </div>
+        <a class="item-action" target="_blank" rel="noreferrer">Open</a>
+      </article>
+    </template>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/app.js"></script>
+  </body>
+</html>
