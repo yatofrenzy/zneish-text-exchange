@@ -188,7 +188,7 @@ textarea:focus {
 
 .assistant-body {
   display: grid;
-  grid-template-columns: 18rem minmax(0, 1fr);
+  grid-template-columns: 19rem minmax(0, 1fr);
   min-height: 100vh;
   background: var(--surface);
 }
@@ -201,7 +201,7 @@ textarea:focus {
   gap: 1rem;
   min-height: 100vh;
   border-right: 1px solid var(--border);
-  background: var(--soft);
+  background: color-mix(in srgb, var(--soft) 80%, var(--surface));
   padding: 1rem;
 }
 
@@ -215,30 +215,51 @@ textarea:focus {
   gap: 0.45rem;
 }
 
-.ai-nav a {
+.ai-nav a,
+.new-chat-button,
+.session-list button {
+  min-height: 2.55rem;
+  border: 0;
   border-radius: 8px;
+  background: transparent;
   color: var(--text);
   padding: 0.72rem 0.8rem;
   text-decoration: none;
+  text-align: left;
 }
 
-.ai-nav a:hover {
+.ai-nav a:hover,
+.new-chat-button:hover,
+.session-list button:hover,
+.session-list button.active {
   background: var(--surface);
 }
 
-.ai-tip {
+.new-chat-button {
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.session-section {
   display: grid;
   gap: 0.35rem;
-  margin-top: 0.5rem;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--surface);
-  padding: 0.85rem;
 }
 
-.ai-tip span {
+.session-section > span,
+.session-empty {
   color: var(--muted);
-  line-height: 1.4;
+  font-size: 0.88rem;
+}
+
+.session-list {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.session-list button {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .ai-main {
@@ -266,30 +287,80 @@ textarea:focus {
   gap: 0.85rem;
   width: min(860px, calc(100% - 2rem));
   margin: 0 auto;
-  padding: 1rem 0 10rem;
+  padding: 1.25rem 0 11rem;
   overflow: auto;
 }
 
 .ai-thread .chat-message {
+  width: fit-content;
   max-width: 82%;
   border: 0;
   box-shadow: none;
+  line-height: 1.6;
 }
 
 .ai-thread .chat-message.assistant {
   justify-self: start;
-  background: var(--soft);
+  background: transparent;
 }
 
 .ai-thread .chat-message.user {
   justify-self: end;
-  background: var(--brand);
-  color: white;
+  background: var(--soft);
+  color: var(--text);
 }
 
 .ai-thread .chat-message.user p,
 .ai-thread .chat-message.user small {
-  color: rgba(255, 255, 255, 0.88);
+  color: var(--muted);
+}
+
+.welcome-prompt {
+  display: grid;
+  place-items: center;
+  min-height: 46vh;
+  text-align: center;
+}
+
+.welcome-prompt h2 {
+  font-size: clamp(1.7rem, 4vw, 2.5rem);
+}
+
+.welcome-prompt p {
+  max-width: 34rem;
+  color: var(--muted);
+}
+
+.thinking p {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.thinking span {
+  width: 0.48rem;
+  height: 0.48rem;
+  border-radius: 50%;
+  background: var(--muted);
+  animation: thinking 900ms infinite ease-in-out;
+}
+
+.thinking span:nth-child(2) {
+  animation-delay: 120ms;
+}
+
+.thinking span:nth-child(3) {
+  animation-delay: 240ms;
+}
+
+@keyframes thinking {
+  0%, 80%, 100% {
+    opacity: 0.35;
+    transform: translateY(0);
+  }
+  40% {
+    opacity: 1;
+    transform: translateY(-0.25rem);
+  }
 }
 
 .ai-composer {
@@ -327,6 +398,14 @@ textarea:focus {
   background: var(--brand);
   border-color: var(--brand);
   color: white;
+}
+
+.export-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .games-page {
@@ -864,6 +943,11 @@ textarea {
   .send-button {
     width: 100%;
     margin-left: 0;
+  }
+
+  .export-actions {
+    width: 100%;
+    justify-content: flex-start;
   }
 
   .topbar {

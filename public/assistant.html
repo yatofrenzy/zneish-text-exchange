@@ -15,30 +15,38 @@
           <small id="assistantRoom">Room</small>
         </span>
       </a>
+
+      <button class="new-chat-button" id="newChat" type="button">New chat</button>
+
       <nav class="ai-nav">
         <a id="backToRoom" href="/">Text Exchange</a>
         <a id="gamesLink" href="/games.html">Games</a>
       </nav>
-      <div class="ai-tip">
-        <strong>Readable uploads</strong>
-        <span>Images, PDFs with selectable text, and text files are sent to the assistant.</span>
+
+      <div class="session-section">
+        <span>Recents</span>
+        <div class="session-list" id="sessionList"></div>
       </div>
     </aside>
 
     <main class="ai-main">
       <header class="ai-top">
         <div>
-          <p class="eyebrow">AI assistant</p>
-          <h1>How can I help?</h1>
+          <p class="eyebrow">Zneish assistant</p>
+          <h1 id="chatTitle">What are you working on?</h1>
         </div>
-        <span class="status-pill"><span class="pulse"></span><span id="aiStatus">Ready</span></span>
+        <div class="export-actions">
+          <button id="exportDocx" type="button">Word</button>
+          <button id="exportPptx" type="button">PowerPoint</button>
+          <span class="status-pill"><span class="pulse"></span><span id="aiStatus">Ready</span></span>
+        </div>
       </header>
 
       <section class="ai-thread" id="chatLog" aria-label="AI chat"></section>
 
       <form class="ai-composer" id="chatForm">
         <div class="file-list" id="fileList"></div>
-        <textarea id="chatInput" rows="3" placeholder="Ask anything about your PDFs, photos, or files..." aria-label="Ask AI"></textarea>
+        <textarea id="chatInput" rows="3" placeholder="Ask anything..." aria-label="Ask AI"></textarea>
         <div class="composer-actions">
           <label class="file-button">
             <input id="aiFiles" type="file" multiple accept="image/*,.pdf,.txt,.md,.csv,.json,.js,.css,.html" />

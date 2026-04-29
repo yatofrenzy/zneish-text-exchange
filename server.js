@@ -5,6 +5,8 @@ const express = require("express");
 const multer = require("multer");
 const { PDFParse } = require("pdf-parse");
 const { Server } = require("socket.io");
+const { Document, Packer, Paragraph, TextRun } = require("docx");
+const pptxgen = require("pptxgenjs");
 
 const app = express();
 const server = http.createServer(app);
@@ -66,6 +68,26 @@ app.get("/api/rooms/:roomKey", (req, res) => {
   res.json(publicRoomState(roomKey, room));
 });
 
+app.get("/api/rooms/:roomKey/chat-sessions", (req, res) => {
+  const roomKey = normalizeRoomKey(req.params.roomKey);
+  const room = getRoom(roomKey);
+  res.json({ sessions: chatSessionList(room) });
+});
+
+app.post("/api/rooms/:roomKey/chat-sessions", (req, res) => {
+  const roomKey = normalizeRoomKey(req.params.roomKey);
+  const room = getRoom(roomKey);
+  const session = createChatSession(room, req.body?.title);
+  res.status(201).json(publicChatSession(session));
+});
+
+app.get("/api/rooms/:roomKey/chat-sessions/:sessionId", (req, res) => {
+  const roomKey = normalizeRoomKey(req.params.roomKey);
+  const room = getRoom(roomKey);
+  const session = getChatSession(room, req.params.sessionId);
+  res.json(publicChatSession(session));
+});
+
 app.post("/api/rooms/:roomKey/upload", upload.single("file"), (req, res) => {
   const roomKey = normalizeRoomKey(req.params.roomKey);
   const room = getRoom(roomKey);
@@ -91,9 +113,11 @@ app.post("/api/rooms/:roomKey/upload", upload.single("file"), (req, res) => {
 
 app.post("/api/chat", chatUpload.array("files", 10), async (req, res) => {
   const roomKey = normalizeRoomKey(req.body?.roomKey);
+  const sessionId = normalizeSessionId(req.body?.sessionId);
   const message = String(req.body?.message || "").trim().slice(0, 2000);
   const userName = cleanName(req.body?.userName);
   const room = getRoom(roomKey);
+  const session = getChatSession(room, sessionId);
   const files = await enrichUploadedFiles(Array.isArray(req.files) ? req.files.slice(0, 10) : []);
 
   if (!message && !files.length) {
@@ -114,22 +138,22 @@ app.post("/api/chat", chatUpload.array("files", 10), async (req, res) => {
     attachments: files.map(fileSummary),
     createdAt: new Date().toISOString()
   };
-  room.chat.push(userMessage);
-  room.chat = room.chat.slice(-30);
-  io.to(roomKey).emit("chat:add", userMessage);
+  rememberChatMessage(room, session, userMessage);
+  io.to(roomKey).emit("chat:add", { sessionId: session.id, message: userMessage });
+  io.to(roomKey).emit("chat:sessions", chatSessionList(room));
 
   try {
-    const answer = await askOpenRouter(room.chat, files, message, userName);
+    const answer = cleanAssistantText(await askOpenRouter(session.messages, files, message, userName));
     const assistantMessage = {
       id: createId(),
       role: "assistant",
       content: answer,
       createdAt: new Date().toISOString()
     };
-    room.chat.push(assistantMessage);
-    room.chat = room.chat.slice(-30);
-    io.to(roomKey).emit("chat:add", assistantMessage);
-    res.json({ answer });
+    rememberChatMessage(room, session, assistantMessage);
+    io.to(roomKey).emit("chat:add", { sessionId: session.id, message: assistantMessage });
+    io.to(roomKey).emit("chat:sessions", chatSessionList(room));
+    res.json({ answer, sessionId: session.id });
   } catch (error) {
     const failMessage = {
       id: createId(),
@@ -137,10 +161,64 @@ app.post("/api/chat", chatUpload.array("files", 10), async (req, res) => {
       content: "AI chat failed. Check your OpenRouter key and Render environment variables.",
       createdAt: new Date().toISOString()
     };
-    room.chat.push(failMessage);
-    io.to(roomKey).emit("chat:add", failMessage);
+    rememberChatMessage(room, session, failMessage);
+    io.to(roomKey).emit("chat:add", { sessionId: session.id, message: failMessage });
     res.status(500).json({ message: error.message });
   }
+});
+
+app.post("/api/export/docx", async (req, res) => {
+  const room = getRoom(normalizeRoomKey(req.body?.roomKey));
+  const session = getChatSession(room, normalizeSessionId(req.body?.sessionId));
+  const doc = new Document({
+    sections: [
+      {
+        children: [
+          new Paragraph({
+            children: [new TextRun({ text: session.title || "Zneish AI Chat", bold: true, size: 32 })]
+          }),
+          ...session.messages.flatMap((message) => [
+            new Paragraph({
+              children: [new TextRun({ text: message.role === "assistant" ? "Zneish AI" : message.name || "You", bold: true })]
+            }),
+            ...String(message.content || "").split("\n").map((line) => new Paragraph(line || " "))
+          ])
+        ]
+      }
+    ]
+  });
+  const buffer = await Packer.toBuffer(doc);
+  sendBuffer(res, buffer, "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "zneish-ai-chat.docx");
+});
+
+app.post("/api/export/pptx", async (req, res) => {
+  const room = getRoom(normalizeRoomKey(req.body?.roomKey));
+  const session = getChatSession(room, normalizeSessionId(req.body?.sessionId));
+  const pptx = new pptxgen();
+  pptx.layout = "LAYOUT_WIDE";
+  pptx.author = "Zneish AI";
+
+  const titleSlide = pptx.addSlide();
+  titleSlide.addText(session.title || "Zneish AI Chat", { x: 0.7, y: 0.8, w: 11.8, h: 0.7, fontSize: 30, bold: true });
+  titleSlide.addText(`Room chat export - ${new Date().toLocaleString()}`, { x: 0.7, y: 1.7, w: 11.8, h: 0.4, fontSize: 14, color: "666666" });
+
+  const assistantMessages = session.messages.filter((message) => message.role === "assistant");
+  for (const message of assistantMessages.slice(-8)) {
+    const slide = pptx.addSlide();
+    slide.addText("Zneish AI", { x: 0.6, y: 0.4, w: 12, h: 0.4, fontSize: 20, bold: true });
+    slide.addText(String(message.content || "").slice(0, 1200), {
+      x: 0.6,
+      y: 1,
+      w: 12,
+      h: 5.4,
+      fontSize: 16,
+      fit: "shrink",
+      breakLine: false
+    });
+  }
+
+  const buffer = await pptx.write({ outputType: "nodebuffer" });
+  sendBuffer(res, buffer, "application/vnd.openxmlformats-officedocument.presentationml.presentation", "zneish-ai-chat.pptx");
 });
 
 io.on("connection", (socket) => {
@@ -213,9 +291,11 @@ function getRoom(roomKey) {
       text: "",
       items: [],
       chat: [],
+      chatSessions: new Map(),
       users: new Map(),
       createdAt: new Date().toISOString()
     });
+    createChatSession(rooms.get(key), "New chat");
   }
   return rooms.get(key);
 }
@@ -226,8 +306,58 @@ function publicRoomState(roomKey, room) {
     text: room.text,
     items: room.items,
     chat: room.chat,
+    chatSessions: chatSessionList(room),
     participants: participantsFor(room),
     createdAt: room.createdAt
+  };
+}
+
+function createChatSession(room, title = "New chat") {
+  const session = {
+    id: createId(),
+    title: String(title || "New chat").trim().slice(0, 60) || "New chat",
+    messages: [],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+  room.chatSessions.set(session.id, session);
+  return session;
+}
+
+function getChatSession(room, sessionId) {
+  const existingId = sessionId && room.chatSessions.has(sessionId) ? sessionId : "";
+  if (existingId) return room.chatSessions.get(existingId);
+  if (!room.chatSessions.size) return createChatSession(room, "New chat");
+  return Array.from(room.chatSessions.values()).sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))[0];
+}
+
+function rememberChatMessage(room, session, message) {
+  session.messages.push(message);
+  session.messages = session.messages.slice(-60);
+  session.updatedAt = new Date().toISOString();
+  if (message.role === "user" && session.title === "New chat" && message.content) {
+    session.title = String(message.content).replace(/\s+/g, " ").slice(0, 42);
+  }
+  room.chat = session.messages;
+}
+
+function chatSessionList(room) {
+  return Array.from(room.chatSessions.values())
+    .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
+    .map((session) => ({
+      id: session.id,
+      title: session.title,
+      updatedAt: session.updatedAt,
+      count: session.messages.length
+    }));
+}
+
+function publicChatSession(session) {
+  return {
+    id: session.id,
+    title: session.title,
+    messages: session.messages,
+    updatedAt: session.updatedAt
   };
 }
 
@@ -351,6 +481,26 @@ function describeUploadedFile(file) {
 
 function isPdfFile(file) {
   return file.mimetype === "application/pdf" || file.originalname.match(/\.pdf$/i);
+}
+
+function cleanAssistantText(value) {
+  return String(value || "")
+    .replace(/\*\*/g, "")
+    .replace(/^--+\s*/gm, "")
+    .replace(/--+/g, "-")
+    .replace(/```[a-zA-Z0-9_-]*\n?/g, "")
+    .replace(/```/g, "")
+    .trim();
+}
+
+function normalizeSessionId(value) {
+  return String(value || "").replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 80);
+}
+
+function sendBuffer(res, buffer, contentType, filename) {
+  res.setHeader("Content-Type", contentType);
+  res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+  res.send(buffer);
 }
 
 function fileSummary(file) {
