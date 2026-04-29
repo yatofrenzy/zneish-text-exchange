@@ -1,75 +1,125 @@
 # Zneish Text Exchange
 
-Zneish Text Exchange is a realtime sharing website inspired by simple shared text boards. It supports live text editing, quick notes, links, photo uploads, file uploads, downloads, copy, dark mode, and a live connected-user count.
+Zneish Text Exchange is a realtime room-based sharing website. People create a room, copy the room invite link or room key, and everyone in that room can share live text, notes, links, files, photos, AI chat, and small browser games.
 
-## What is inside
+## Features
 
-- `server.js` runs the Express web server and Socket.IO realtime server.
-- `public/index.html` is the website layout.
-- `public/styles.css` is the full responsive UI design.
-- `public/app.js` connects the browser to WebSocket events and handles uploads.
-- `public/uploads/` is where uploaded files are saved while the server is running.
+- Separate rooms with unique room keys
+- Realtime shared text using Socket.IO WebSockets
+- Share notes and links in each room
+- Upload files and photos per room
+- Copy, paste, download, refresh, and clear room text
+- Global mode for deployed internet sharing
+- Local Wi-Fi mode guidance for same-network sharing
+- AI chat using OpenRouter through a safe server environment variable
+- Built-in Snake, Tetris, Flappy, and Murder Guess games
+- Dark mode and responsive UI
 
-## Beginner setup on Windows
+## Important API key safety
 
-1. Install Node.js from [nodejs.org](https://nodejs.org/). Choose the LTS version if you are unsure.
-2. Open this project folder in VS Code or Terminal.
-3. If PowerShell blocks `npm`, use `npm.cmd` instead of `npm`.
-4. Install the project packages:
+Never put your OpenRouter API key inside `server.js`, `app.js`, GitHub, or public chat. If you already shared a key, revoke it in OpenRouter and create a new one.
+
+This project reads the key from:
+
+```text
+OPENROUTER_API_KEY
+```
+
+## Run locally on Windows
+
+1. Open this project folder in PowerShell.
+2. Install dependencies:
 
 ```bash
 npm.cmd install
 ```
 
-5. Start the website:
+3. Start the app:
 
 ```bash
 npm.cmd run dev
 ```
 
-6. Open this URL in your browser:
+4. Open:
 
 ```text
 http://localhost:3000
 ```
 
-7. To test realtime sharing, open the same URL in two browser tabs. Type in one tab and watch the other update.
+5. Create a room, copy the invite link, and open it in another tab to test realtime sharing.
 
-## How to use
+## Enable AI chat locally
 
-- Type in the large text box to sync text live.
-- Paste a URL or short note in the top input, then press Share.
-- Drop photos or files into the upload box.
-- Use Copy to copy the shared text.
-- Use Download to save the shared text as a `.txt` file.
-- Use Clear to reset the board for everyone connected.
+PowerShell temporary setup:
 
-## Deploying
+```powershell
+$env:OPENROUTER_API_KEY="your_new_openrouter_key"
+$env:OPENROUTER_MODEL="openai/gpt-4o-mini"
+$env:PUBLIC_APP_URL="http://localhost:3000"
+npm.cmd run dev
+```
 
-This app is ready for platforms that support Node.js WebSockets, such as Render, Railway, Fly.io, or a VPS.
+The key is only available in that terminal session.
 
-### Render quick deploy
+## Local Wi-Fi sharing
+
+If you run the app on your computer, people on the same Wi-Fi can join using your computer's local IP address:
+
+```text
+http://YOUR_LOCAL_IP:3000?room=ROOMKEY
+```
+
+Example:
+
+```text
+http://192.168.1.25:3000?room=AB12CD
+```
+
+This only works on the same network unless you deploy the app.
+
+## Global internet sharing
+
+Deploy to Render. Then people anywhere can open:
+
+```text
+https://your-render-name.onrender.com?room=ROOMKEY
+```
+
+## Deploy to Render
 
 1. Push this project to GitHub.
-2. Create a new Render Web Service.
+2. Go to Render and create a new Web Service.
 3. Connect your GitHub repository.
-4. Use these settings:
+4. Use:
 
 ```text
 Build Command: npm install
 Start Command: npm start
 ```
 
-5. Deploy and open the public Render URL.
+5. Add environment variables in Render:
 
-## Important note about files
+```text
+OPENROUTER_API_KEY=your_new_openrouter_key
+OPENROUTER_MODEL=openai/gpt-4o-mini
+PUBLIC_APP_URL=https://your-render-name.onrender.com
+```
 
-Uploaded files are saved to `public/uploads/` on the server. That is fine for learning and small demos. For a serious production app, store uploads in a service like Cloudinary, UploadThing, S3, or Supabase Storage so files do not disappear when the server restarts or redeploys.
+6. Deploy.
 
-## Customize the name
+## Push updates to GitHub
 
-The current name is **Zneish Text Exchange**. You can rename it in:
+After editing files:
 
-- `public/index.html`
-- `package.json`
-- this `README.md`
+```bash
+git status
+git add .
+git commit -m "Add rooms games and AI chat"
+git push
+```
+
+Render will redeploy automatically if auto deploy is enabled.
+
+## Production note about uploads
+
+Uploads are saved under `public/uploads/` on the running server. This is good for learning and demos. For a serious production app, use Cloudinary, Supabase Storage, S3, or another permanent file storage service.
