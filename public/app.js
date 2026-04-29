@@ -27,6 +27,12 @@ const modeHelp = document.querySelector("#modeHelp");
 const chatForm = document.querySelector("#chatForm");
 const chatInput = document.querySelector("#chatInput");
 const chatLog = document.querySelector("#chatLog");
+const aiToggle = document.querySelector("#aiToggle");
+const aiClose = document.querySelector("#aiClose");
+const assistantDrawer = document.querySelector("#assistantDrawer");
+const gamesToggle = document.querySelector("#gamesToggle");
+const gamesClose = document.querySelector("#gamesClose");
+const gamesDrawer = document.querySelector("#gamesDrawer");
 
 let currentRoomKey = getInitialRoomKey();
 let items = [];
@@ -46,6 +52,7 @@ setupRoomControls();
 setupSharingTools();
 setupUploads();
 setupChat();
+setupDrawers();
 setupGames();
 
 socket.on("connect", () => {
@@ -235,6 +242,32 @@ function setupChat() {
       chatInput.disabled = false;
       chatInput.focus();
     }
+  });
+}
+
+function setupDrawers() {
+  aiToggle.addEventListener("click", () => {
+    assistantDrawer.classList.toggle("open");
+    assistantDrawer.setAttribute("aria-hidden", assistantDrawer.classList.contains("open") ? "false" : "true");
+    gamesDrawer.classList.remove("open");
+    gamesDrawer.setAttribute("aria-hidden", "true");
+  });
+
+  aiClose.addEventListener("click", () => {
+    assistantDrawer.classList.remove("open");
+    assistantDrawer.setAttribute("aria-hidden", "true");
+  });
+
+  gamesToggle.addEventListener("click", () => {
+    gamesDrawer.classList.toggle("open");
+    gamesDrawer.setAttribute("aria-hidden", gamesDrawer.classList.contains("open") ? "false" : "true");
+    assistantDrawer.classList.remove("open");
+    assistantDrawer.setAttribute("aria-hidden", "true");
+  });
+
+  gamesClose.addEventListener("click", () => {
+    gamesDrawer.classList.remove("open");
+    gamesDrawer.setAttribute("aria-hidden", "true");
   });
 }
 

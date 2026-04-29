@@ -17,44 +17,44 @@
           </span>
         </a>
 
-        <div class="header-status">
+        <nav class="nav-actions" aria-label="Main actions">
+          <button id="aiToggle" type="button">AI Assistant</button>
+          <button id="gamesToggle" type="button">Games</button>
           <span class="status-pill"><span class="pulse"></span><span id="presence">Connecting</span></span>
           <label class="toggle" title="Toggle dark mode">
             <input id="themeToggle" type="checkbox" />
             <span>Dark</span>
           </label>
-        </div>
+        </nav>
       </header>
 
-      <main class="layout">
-        <section class="room-panel" aria-labelledby="roomTitle">
+      <main class="main">
+        <section class="room-strip" aria-labelledby="roomTitle">
           <div>
-            <p class="eyebrow">Private room key</p>
-            <h1 id="roomTitle">Create a room and invite people by key</h1>
+            <p class="eyebrow">Private room</p>
+            <h1 id="roomTitle">Share text, links, files, and photos in realtime</h1>
           </div>
 
-          <div class="room-controls">
+          <div class="room-actions">
             <button id="createRoom" type="button">Create Room</button>
             <form id="joinRoomForm">
-              <input id="roomInput" maxlength="10" placeholder="Enter room key" aria-label="Room key" />
+              <input id="roomInput" maxlength="10" placeholder="Room key" aria-label="Room key" />
               <button type="submit">Join</button>
             </form>
-          </div>
-
-          <div class="room-card">
-            <span>Current room</span>
-            <strong id="roomKeyLabel">PUBLIC</strong>
             <button id="copyInvite" type="button">Copy Invite</button>
           </div>
 
-          <div class="mode-switch" role="group" aria-label="Network mode">
-            <button class="active" id="globalMode" type="button">Global</button>
-            <button id="localMode" type="button">Local Wi-Fi</button>
+          <div class="room-meta">
+            <strong id="roomKeyLabel">PUBLIC</strong>
+            <span id="modeHelp">Global link works on Render. Local Wi-Fi works on the same network.</span>
+            <div class="mode-switch" role="group" aria-label="Network mode">
+              <button class="active" id="globalMode" type="button">Global</button>
+              <button id="localMode" type="button">Local Wi-Fi</button>
+            </div>
           </div>
-          <p class="mode-help" id="modeHelp">Global mode works after you deploy to Render. Anyone with the room link can join.</p>
         </section>
 
-        <section class="editor-panel" aria-labelledby="editorTitle">
+        <section class="workspace" aria-label="Realtime text sharing">
           <div class="toolbar" aria-label="Text tools">
             <button id="downloadText" type="button">Download</button>
             <button id="copyText" type="button">Copy</button>
@@ -67,7 +67,7 @@
           <textarea
             id="sharedText"
             spellcheck="true"
-            placeholder="Text field - start typing and everyone in this room sees it live..."
+            placeholder="Start typing here. Everyone in this room sees this text live..."
             aria-label="Realtime shared text"
           ></textarea>
 
@@ -91,64 +91,64 @@
           </div>
         </section>
 
-        <section class="side-grid">
-          <aside class="share-panel" aria-labelledby="feedTitle">
-            <div class="panel-head">
-              <div>
-                <p class="eyebrow">Room items</p>
-                <h2 id="feedTitle">Shared files and links</h2>
-              </div>
-              <span class="count" id="itemCount">0</span>
-            </div>
-            <div class="feed" id="feed"></div>
-          </aside>
-
-          <aside class="ai-panel" aria-labelledby="aiTitle">
-            <div class="panel-head">
-              <div>
-                <p class="eyebrow">AI assistant</p>
-                <h2 id="aiTitle">Ask in this room</h2>
-              </div>
-            </div>
-            <div class="chat-log" id="chatLog"></div>
-            <form class="chat-form" id="chatForm">
-              <input id="chatInput" placeholder="Ask anything..." aria-label="Ask AI" />
-              <button type="submit">Ask</button>
-            </form>
-          </aside>
-        </section>
-
-        <section class="games-panel" aria-labelledby="gamesTitle">
+        <section class="feed-panel" aria-labelledby="feedTitle">
           <div class="panel-head">
             <div>
-              <p class="eyebrow">Play games</p>
-              <h2 id="gamesTitle">Room break games</h2>
+              <p class="eyebrow">Shared items</p>
+              <h2 id="feedTitle">Links and files</h2>
             </div>
+            <span class="count" id="itemCount">0</span>
           </div>
-
-          <div class="game-tabs">
-            <button class="active" data-game="snake" type="button">Snake</button>
-            <button data-game="tetris" type="button">Tetris</button>
-            <button data-game="flappy" type="button">Flappy</button>
-            <button data-game="murder" type="button">Murder Guess</button>
-          </div>
-
-          <div class="game-stage">
-            <canvas id="gameCanvas" width="360" height="360" aria-label="Game canvas"></canvas>
-            <div class="game-info">
-              <strong id="gameName">Snake</strong>
-              <span id="gameScore">Score: 0</span>
-              <p id="gameHelp">Use arrow keys or WASD. Avoid walls and your tail.</p>
-              <button id="startGame" type="button">Start Game</button>
-              <div class="murder-box" id="murderBox" hidden>
-                <p id="murderQuestion"></p>
-                <div id="murderChoices"></div>
-              </div>
-            </div>
-          </div>
+          <div class="feed" id="feed"></div>
         </section>
       </main>
     </div>
+
+    <aside class="assistant-drawer" id="assistantDrawer" aria-labelledby="aiTitle" aria-hidden="true">
+      <div class="drawer-head">
+        <div>
+          <p class="eyebrow">AI assistant</p>
+          <h2 id="aiTitle">Ask in this room</h2>
+        </div>
+        <button id="aiClose" type="button">Close</button>
+      </div>
+      <div class="chat-log" id="chatLog"></div>
+      <form class="chat-form" id="chatForm">
+        <input id="chatInput" placeholder="Ask anything..." aria-label="Ask AI" />
+        <button type="submit">Ask</button>
+      </form>
+    </aside>
+
+    <aside class="games-drawer" id="gamesDrawer" aria-labelledby="gamesTitle" aria-hidden="true">
+      <div class="drawer-head">
+        <div>
+          <p class="eyebrow">Play games</p>
+          <h2 id="gamesTitle">Room break games</h2>
+        </div>
+        <button id="gamesClose" type="button">Close</button>
+      </div>
+
+      <div class="game-tabs">
+        <button class="active" data-game="snake" type="button">Snake</button>
+        <button data-game="tetris" type="button">Tetris</button>
+        <button data-game="flappy" type="button">Flappy</button>
+        <button data-game="murder" type="button">Murder Guess</button>
+      </div>
+
+      <div class="game-stage">
+        <canvas id="gameCanvas" width="360" height="360" aria-label="Game canvas"></canvas>
+        <div class="game-info">
+          <strong id="gameName">Snake</strong>
+          <span id="gameScore">Score: 0</span>
+          <p id="gameHelp">Use arrow keys or WASD. Avoid walls and your tail.</p>
+          <button id="startGame" type="button">Start Game</button>
+          <div class="murder-box" id="murderBox" hidden>
+            <p id="murderQuestion"></p>
+            <div id="murderChoices"></div>
+          </div>
+        </div>
+      </div>
+    </aside>
 
     <template id="itemTemplate">
       <article class="feed-item">
