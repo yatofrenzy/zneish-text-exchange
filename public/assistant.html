@@ -6,46 +6,49 @@
     <title>Zneish AI Assistant</title>
     <link rel="stylesheet" href="/styles.css" />
   </head>
-  <body>
-    <header class="topbar">
-      <a class="brand" id="homeLink" href="/" aria-label="Back to room">
+  <body class="assistant-body">
+    <aside class="ai-sidebar">
+      <a class="brand ai-brand" id="homeLink" href="/" aria-label="Back to room">
         <span class="brand-mark">Z</span>
         <span>
           <strong>Zneish AI</strong>
-          <small>Assistant Room</small>
+          <small id="assistantRoom">Room</small>
         </span>
       </a>
-
-      <nav class="nav-actions" aria-label="Assistant actions">
-        <a class="nav-link" id="backToRoom" href="/">Back to Room</a>
-        <span class="status-pill"><span class="pulse"></span><span id="assistantRoom">Room</span></span>
+      <nav class="ai-nav">
+        <a id="backToRoom" href="/">Text Exchange</a>
+        <a id="gamesLink" href="/games.html">Games</a>
       </nav>
-    </header>
+      <div class="ai-tip">
+        <strong>Readable uploads</strong>
+        <span>Images, PDFs with selectable text, and text files are sent to the assistant.</span>
+      </div>
+    </aside>
 
-    <main class="assistant-page">
-      <section class="assistant-hero">
-        <p class="eyebrow">AI assistant</p>
-        <h1>Ask questions with photos, PDFs, and files</h1>
-        <p>Attach up to 10 files. Images and text-like files are readable by the assistant; other files are sent with name, type, and size information.</p>
-      </section>
+    <main class="ai-main">
+      <header class="ai-top">
+        <div>
+          <p class="eyebrow">AI assistant</p>
+          <h1>How can I help?</h1>
+        </div>
+        <span class="status-pill"><span class="pulse"></span><span id="aiStatus">Ready</span></span>
+      </header>
 
-      <section class="assistant-chat" aria-label="AI chat">
-        <div class="chat-log large" id="chatLog"></div>
+      <section class="ai-thread" id="chatLog" aria-label="AI chat"></section>
 
-        <form class="assistant-compose" id="chatForm">
-          <textarea id="chatInput" rows="4" placeholder="Ask anything..." aria-label="Ask AI"></textarea>
-          <div class="attach-row">
-            <label class="file-button">
-              <input id="aiFiles" type="file" multiple accept="image/*,.pdf,.txt,.md,.csv,.json,.js,.css,.html" />
-              Add files
-            </label>
-            <span id="fileHint">0 / 10 files selected</span>
-            <button type="button" id="clearFiles">Clear Files</button>
-            <button type="submit">Ask AI</button>
-          </div>
-          <div class="file-list" id="fileList"></div>
-        </form>
-      </section>
+      <form class="ai-composer" id="chatForm">
+        <div class="file-list" id="fileList"></div>
+        <textarea id="chatInput" rows="3" placeholder="Ask anything about your PDFs, photos, or files..." aria-label="Ask AI"></textarea>
+        <div class="composer-actions">
+          <label class="file-button">
+            <input id="aiFiles" type="file" multiple accept="image/*,.pdf,.txt,.md,.csv,.json,.js,.css,.html" />
+            Add files
+          </label>
+          <span id="fileHint">0 / 10 files</span>
+          <button type="button" id="clearFiles">Clear</button>
+          <button class="send-button" type="submit">Ask AI</button>
+        </div>
+      </form>
     </main>
 
     <script src="/socket.io/socket.io.js"></script>

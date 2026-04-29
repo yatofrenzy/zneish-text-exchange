@@ -3,6 +3,7 @@ const fs = require("fs");
 const http = require("http");
 const express = require("express");
 const multer = require("multer");
+const { PDFParse } = require("pdf-parse");
 const { Server } = require("socket.io");
 
 const app = express();
@@ -93,7 +94,7 @@ app.post("/api/chat", chatUpload.array("files", 10), async (req, res) => {
   const message = String(req.body?.message || "").trim().slice(0, 2000);
   const userName = cleanName(req.body?.userName);
   const room = getRoom(roomKey);
-  const files = Array.isArray(req.files) ? req.files.slice(0, 10) : [];
+  const files = await enrichUploadedFiles(Array.isArray(req.files) ? req.files.slice(0, 10) : []);
 
   if (!message && !files.length) {
     return res.status(400).json({ message: "Ask something or attach a file first." });
@@ -269,7 +270,7 @@ async function askOpenRouter(chat, files = [], latestMessage = "", userName = "G
       messages: [
         {
           role: "system",
-          content: "You are the helpful Zneish room assistant. Keep answers clear, useful, and beginner friendly. If users attach files, explain what you can infer from file names, text contents, or images."
+          content: "You are the helpful Zneish room assistant. Keep answers clear, useful, and beginner friendly. Use extracted PDF text, uploaded text-file contents, and images when they are provided. If a PDF has no extracted text, say it may be scanned/protected and ask for page images or selectable text."
         },
         ...history,
         {
@@ -312,12 +313,44 @@ function buildLatestChatContent(message, files, userName) {
   return parts;
 }
 
+async function enrichUploadedFiles(files) {
+  const enriched = [];
+  for (const file of files) {
+    const next = { ...file };
+    if (isPdfFile(file)) {
+      let parser;
+      try {
+        parser = new PDFParse({ data: file.buffer });
+        const data = await parser.getText();
+        next.extractedText = String(data.text || "").replace(/\s+\n/g, "\n").trim().slice(0, 18000);
+      } catch {
+        next.extractedText = "";
+        next.extractError = "The PDF text could not be extracted. It may be scanned or protected.";
+      } finally {
+        await parser?.destroy?.();
+      }
+    }
+    enriched.push(next);
+  }
+  return enriched;
+}
+
 function describeUploadedFile(file) {
   const base = `Attached file: ${file.originalname} (${file.mimetype || "unknown type"}, ${file.size} bytes).`;
+  if (isPdfFile(file)) {
+    if (file.extractedText) {
+      return `${base}\nExtracted PDF text:\n${file.extractedText}`;
+    }
+    return `${base}\n${file.extractError || "No readable text was found in this PDF. If it is a scanned PDF, upload screenshots/images of the pages."}`;
+  }
   if (file.mimetype.startsWith("text/") || file.originalname.match(/\.(txt|md|csv|json|js|css|html)$/i)) {
     return `${base}\nFile text preview:\n${file.buffer.toString("utf8").slice(0, 12000)}`;
   }
-  return `${base}\nThe server received this file, but only image files and plain text previews are readable by the AI in this version.`;
+  return `${base}\nThis file type is attached for context, but this version can only directly read images, PDFs with extractable text, and plain text-like files.`;
+}
+
+function isPdfFile(file) {
+  return file.mimetype === "application/pdf" || file.originalname.match(/\.pdf$/i);
 }
 
 function fileSummary(file) {

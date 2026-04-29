@@ -1,12 +1,12 @@
 :root {
   color-scheme: light;
-  --bg: #f6f7f9;
+  --bg: #f7f7f8;
   --surface: #ffffff;
-  --soft: #eef2f6;
-  --text: #161b22;
-  --muted: #66717f;
-  --border: #d9e0e8;
-  --brand: #ef4f55;
+  --soft: #f0f2f5;
+  --text: #171717;
+  --muted: #6b7280;
+  --border: #d6dbe3;
+  --brand: #10a37f;
   --accent: #159b7f;
   --shadow: 0 18px 50px rgba(24, 34, 45, 0.1);
 }
@@ -14,12 +14,12 @@
 [data-theme="dark"] {
   color-scheme: dark;
   --bg: #12161c;
-  --surface: #1a2028;
-  --soft: #242c36;
+  --surface: #171a21;
+  --soft: #20242d;
   --text: #f5f7fb;
   --muted: #a7b0bd;
   --border: #303a46;
-  --brand: #ff6269;
+  --brand: #19c99a;
   --accent: #51d0ae;
   --shadow: 0 18px 50px rgba(0, 0, 0, 0.28);
 }
@@ -184,6 +184,175 @@ textarea:focus {
   border-radius: 8px;
   background: var(--surface);
   box-shadow: var(--shadow);
+}
+
+.assistant-body {
+  display: grid;
+  grid-template-columns: 18rem minmax(0, 1fr);
+  min-height: 100vh;
+  background: var(--surface);
+}
+
+.ai-sidebar {
+  position: sticky;
+  top: 0;
+  display: grid;
+  align-content: start;
+  gap: 1rem;
+  min-height: 100vh;
+  border-right: 1px solid var(--border);
+  background: var(--soft);
+  padding: 1rem;
+}
+
+.ai-brand {
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.ai-nav {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.ai-nav a {
+  border-radius: 8px;
+  color: var(--text);
+  padding: 0.72rem 0.8rem;
+  text-decoration: none;
+}
+
+.ai-nav a:hover {
+  background: var(--surface);
+}
+
+.ai-tip {
+  display: grid;
+  gap: 0.35rem;
+  margin-top: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  padding: 0.85rem;
+}
+
+.ai-tip span {
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.ai-main {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  min-height: 100vh;
+}
+
+.ai-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem clamp(1rem, 4vw, 2rem);
+  border-bottom: 1px solid var(--border);
+}
+
+.ai-top h1 {
+  font-size: clamp(1.45rem, 3vw, 2rem);
+}
+
+.ai-thread {
+  display: grid;
+  align-content: start;
+  gap: 0.85rem;
+  width: min(860px, calc(100% - 2rem));
+  margin: 0 auto;
+  padding: 1rem 0 10rem;
+  overflow: auto;
+}
+
+.ai-thread .chat-message {
+  max-width: 82%;
+  border: 0;
+  box-shadow: none;
+}
+
+.ai-thread .chat-message.assistant {
+  justify-self: start;
+  background: var(--soft);
+}
+
+.ai-thread .chat-message.user {
+  justify-self: end;
+  background: var(--brand);
+  color: white;
+}
+
+.ai-thread .chat-message.user p,
+.ai-thread .chat-message.user small {
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.ai-composer {
+  position: sticky;
+  bottom: 0;
+  display: grid;
+  gap: 0.65rem;
+  width: min(860px, calc(100% - 2rem));
+  margin: 0 auto;
+  border: 1px solid var(--border);
+  border-radius: 8px 8px 0 0;
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  padding: 0.8rem;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(12px);
+}
+
+.ai-composer textarea {
+  min-height: 6rem;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 0.4rem;
+}
+
+.composer-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+
+.send-button {
+  margin-left: auto;
+  background: var(--brand);
+  border-color: var(--brand);
+  color: white;
+}
+
+.games-page {
+  display: grid;
+  gap: 1rem;
+  width: min(1040px, calc(100% - 2rem));
+  margin: 1rem auto;
+}
+
+.games-hero,
+.games-board {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  padding: 1rem;
+  box-shadow: var(--shadow);
+}
+
+.games-hero p:last-child {
+  margin-bottom: 0;
+  color: var(--muted);
+}
+
+.game-stage.full {
+  grid-template-columns: minmax(18rem, 26rem) minmax(16rem, 1fr);
+  align-items: start;
 }
 
 .room-strip,
@@ -664,6 +833,39 @@ textarea {
 }
 
 @media (max-width: 720px) {
+  .assistant-body {
+    grid-template-columns: 1fr;
+  }
+
+  .ai-sidebar {
+    position: static;
+    min-height: auto;
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .ai-main {
+    min-height: auto;
+  }
+
+  .ai-top {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .ai-thread {
+    padding-bottom: 13rem;
+  }
+
+  .ai-thread .chat-message {
+    max-width: 100%;
+  }
+
+  .send-button {
+    width: 100%;
+    margin-left: 0;
+  }
+
   .topbar {
     position: static;
     align-items: flex-start;
@@ -686,6 +888,7 @@ textarea {
 
   .toolbar button,
   .nav-actions button,
+  .nav-actions a,
   .mode-switch button {
     flex: 1 1 auto;
   }

@@ -25,9 +25,7 @@ const globalMode = document.querySelector("#globalMode");
 const localMode = document.querySelector("#localMode");
 const modeHelp = document.querySelector("#modeHelp");
 const aiLink = document.querySelector("#aiLink");
-const gamesToggle = document.querySelector("#gamesToggle");
-const gamesClose = document.querySelector("#gamesClose");
-const gamesDrawer = document.querySelector("#gamesDrawer");
+const gamesLink = document.querySelector("#gamesLink");
 const joinGate = document.querySelector("#joinGate");
 const nameJoinForm = document.querySelector("#nameJoinForm");
 const displayNameInput = document.querySelector("#displayNameInput");
@@ -53,8 +51,6 @@ setupTextSharing();
 setupRoomControls();
 setupSharingTools();
 setupUploads();
-setupDrawers();
-setupGames();
 
 socket.on("connect", () => {
   presence.textContent = "Connected";
@@ -224,18 +220,6 @@ function setupUploads() {
   });
 }
 
-function setupDrawers() {
-  gamesToggle.addEventListener("click", () => {
-    gamesDrawer.classList.toggle("open");
-    gamesDrawer.setAttribute("aria-hidden", gamesDrawer.classList.contains("open") ? "false" : "true");
-  });
-
-  gamesClose.addEventListener("click", () => {
-    gamesDrawer.classList.remove("open");
-    gamesDrawer.setAttribute("aria-hidden", "true");
-  });
-}
-
 function joinRoom(roomKey) {
   currentRoomKey = normalizeRoomKey(roomKey);
   roomKeyLabel.textContent = currentRoomKey;
@@ -375,6 +359,11 @@ function updateAiLink() {
   url.searchParams.set("room", currentRoomKey);
   url.searchParams.set("name", displayName || "Guest");
   aiLink.href = url.toString();
+
+  const gamesUrl = new URL("/games.html", window.location.origin);
+  gamesUrl.searchParams.set("room", currentRoomKey);
+  gamesUrl.searchParams.set("name", displayName || "Guest");
+  gamesLink.href = gamesUrl.toString();
 }
 
 function getInitialRoomKey() {

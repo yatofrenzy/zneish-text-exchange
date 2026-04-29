@@ -19,7 +19,7 @@
 
         <nav class="nav-actions" aria-label="Main actions">
           <a class="nav-link primary" id="aiLink" href="/assistant.html">AI Assistant</a>
-          <button id="gamesToggle" type="button">Games</button>
+          <a class="nav-link" id="gamesLink" href="/games.html">Games</a>
           <span class="status-pill"><span class="pulse"></span><span id="presence">Connecting</span></span>
           <label class="toggle" title="Toggle dark mode">
             <input id="themeToggle" type="checkbox" />
@@ -128,44 +128,6 @@
         <button type="submit">Join Room</button>
       </form>
     </div>
-
-    <aside class="games-drawer" id="gamesDrawer" aria-labelledby="gamesTitle" aria-hidden="true">
-      <div class="drawer-head">
-        <div>
-          <p class="eyebrow">Play games</p>
-          <h2 id="gamesTitle">Room break games</h2>
-        </div>
-        <button id="gamesClose" type="button">Close</button>
-      </div>
-
-      <div class="game-tabs">
-        <button class="active" data-game="snake" type="button">Snake</button>
-        <button data-game="tetris" type="button">Tetris</button>
-        <button data-game="flappy" type="button">Flappy</button>
-        <button data-game="murder" type="button">Murder Guess</button>
-      </div>
-
-      <div class="game-stage">
-        <canvas id="gameCanvas" width="360" height="360" aria-label="Game canvas"></canvas>
-        <div class="game-info">
-          <strong id="gameName">Snake</strong>
-          <span id="gameScore">Score: 0</span>
-          <p id="gameHelp">Use arrow keys or WASD. Avoid walls and your tail.</p>
-          <button id="startGame" type="button">Start Game</button>
-          <div class="touch-controls" aria-label="Mobile game controls">
-            <button data-control="arrowup" type="button">Up</button>
-            <button data-control="arrowleft" type="button">Left</button>
-            <button data-control=" " type="button">Flap</button>
-            <button data-control="arrowright" type="button">Right</button>
-            <button data-control="arrowdown" type="button">Down</button>
-          </div>
-          <div class="murder-box" id="murderBox" hidden>
-            <p id="murderQuestion"></p>
-            <div id="murderChoices"></div>
-          </div>
-        </div>
-      </div>
-    </aside>
 
     <template id="itemTemplate">
       <article class="feed-item">

@@ -14,14 +14,18 @@ const clearFiles = document.querySelector("#clearFiles");
 const assistantRoom = document.querySelector("#assistantRoom");
 const backToRoom = document.querySelector("#backToRoom");
 const homeLink = document.querySelector("#homeLink");
+const gamesLink = document.querySelector("#gamesLink");
+const aiStatus = document.querySelector("#aiStatus");
 
 let chat = [];
 let selectedFiles = [];
 
 assistantRoom.textContent = `Room ${roomKey}`;
 const roomUrl = `/?room=${encodeURIComponent(roomKey)}`;
+const gamesUrl = `/games.html?room=${encodeURIComponent(roomKey)}&name=${encodeURIComponent(userName)}`;
 backToRoom.href = roomUrl;
 homeLink.href = roomUrl;
+gamesLink.href = gamesUrl;
 
 socket.on("connect", () => {
   socket.emit("room:join", {
@@ -53,6 +57,7 @@ chatForm.addEventListener("submit", async (event) => {
 
   chatInput.value = "";
   chatInput.disabled = true;
+  aiStatus.textContent = "Thinking";
 
   try {
     const response = await fetch("/api/chat", {
@@ -71,6 +76,7 @@ chatForm.addEventListener("submit", async (event) => {
     toast(error.message);
   } finally {
     chatInput.disabled = false;
+    aiStatus.textContent = "Ready";
     chatInput.focus();
   }
 });
@@ -99,7 +105,7 @@ function renderChat() {
 
   for (const message of chat) {
     const node = document.createElement("div");
-    node.className = "chat-message";
+    node.className = `chat-message ${message.role === "assistant" ? "assistant" : "user"}`;
     const name = message.role === "assistant" ? "Zneish AI" : escapeHtml(message.name || "You");
     const files = Array.isArray(message.attachments) && message.attachments.length
       ? `<small>${message.attachments.map((file) => escapeHtml(file.name)).join(", ")}</small>`
