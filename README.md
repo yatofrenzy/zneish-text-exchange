@@ -54,7 +54,7 @@ PowerShell temporary setup:
 
 ```powershell
 $env:OPENROUTER_API_KEY="your_new_openrouter_key"
-$env:OPENROUTER_MODEL="openai/gpt-4o-mini"
+$env:OPENROUTER_MODEL="nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free"
 $env:PUBLIC_APP_URL="http://localhost:3000"
 npm.cmd run dev
 ```
@@ -101,7 +101,7 @@ Start Command: npm start
 
 ```text
 OPENROUTER_API_KEY=your_new_openrouter_key
-OPENROUTER_MODEL=openai/gpt-4o-mini
+OPENROUTER_MODEL=nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free
 PUBLIC_APP_URL=https://your-render-name.onrender.com
 ```
 

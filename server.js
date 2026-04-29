@@ -18,6 +18,7 @@ const io = new Server(server, {
 
 const PORT = process.env.PORT || 3000;
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || "";
+const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free";
 const publicDir = path.join(__dirname, "public");
 const uploadRoot = path.join(publicDir, "uploads");
 const rooms = new Map();
@@ -396,7 +397,7 @@ async function askOpenRouter(chat, files = [], latestMessage = "", userName = "G
       "X-Title": "Zneish Text Exchange"
     },
     body: JSON.stringify({
-      model: process.env.OPENROUTER_MODEL || "openai/gpt-4o-mini",
+      model: OPENROUTER_MODEL,
       messages: [
         {
           role: "system",
