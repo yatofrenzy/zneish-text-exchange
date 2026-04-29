@@ -42,6 +42,14 @@ const upload = multer({
   }
 });
 
+const chatUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    files: 10,
+    fileSize: 25 * 1024 * 1024
+  }
+});
+
 app.use(express.static(publicDir));
 app.use(express.json({ limit: "1mb" }));
 
@@ -80,13 +88,15 @@ app.post("/api/rooms/:roomKey/upload", upload.single("file"), (req, res) => {
   res.status(201).json(item);
 });
 
-app.post("/api/chat", async (req, res) => {
+app.post("/api/chat", chatUpload.array("files", 10), async (req, res) => {
   const roomKey = normalizeRoomKey(req.body?.roomKey);
   const message = String(req.body?.message || "").trim().slice(0, 2000);
+  const userName = cleanName(req.body?.userName);
   const room = getRoom(roomKey);
+  const files = Array.isArray(req.files) ? req.files.slice(0, 10) : [];
 
-  if (!message) {
-    return res.status(400).json({ message: "Ask something first." });
+  if (!message && !files.length) {
+    return res.status(400).json({ message: "Ask something or attach a file first." });
   }
 
   if (!OPENROUTER_API_KEY) {
@@ -98,7 +108,9 @@ app.post("/api/chat", async (req, res) => {
   const userMessage = {
     id: createId(),
     role: "user",
+    name: userName,
     content: message,
+    attachments: files.map(fileSummary),
     createdAt: new Date().toISOString()
   };
   room.chat.push(userMessage);
@@ -106,7 +118,7 @@ app.post("/api/chat", async (req, res) => {
   io.to(roomKey).emit("chat:add", userMessage);
 
   try {
-    const answer = await askOpenRouter(room.chat);
+    const answer = await askOpenRouter(room.chat, files, message, userName);
     const assistantMessage = {
       id: createId(),
       role: "assistant",
@@ -133,7 +145,8 @@ app.post("/api/chat", async (req, res) => {
 io.on("connection", (socket) => {
   socket.on("room:join", (payload) => {
     const roomKey = normalizeRoomKey(payload?.roomKey);
-    joinRoom(socket, roomKey);
+    const name = cleanName(payload?.name);
+    joinRoom(socket, roomKey, name);
   });
 
   socket.on("text:update", (payload) => {
@@ -164,19 +177,29 @@ io.on("connection", (socket) => {
 
   socket.on("disconnect", () => {
     if (socket.data.roomKey) {
+      const room = getRoom(socket.data.roomKey);
+      room.users.delete(socket.id);
       emitPresence(socket.data.roomKey);
     }
   });
 });
 
-function joinRoom(socket, roomKey) {
+function joinRoom(socket, roomKey, name) {
   if (socket.data.roomKey) {
+    const oldRoom = getRoom(socket.data.roomKey);
+    oldRoom.users.delete(socket.id);
     socket.leave(socket.data.roomKey);
     emitPresence(socket.data.roomKey);
   }
 
   const room = getRoom(roomKey);
   socket.data.roomKey = roomKey;
+  socket.data.name = name;
+  room.users.set(socket.id, {
+    id: socket.id,
+    name,
+    joinedAt: new Date().toISOString()
+  });
   socket.join(roomKey);
   socket.emit("state:init", publicRoomState(roomKey, room));
   emitPresence(roomKey);
@@ -189,6 +212,7 @@ function getRoom(roomKey) {
       text: "",
       items: [],
       chat: [],
+      users: new Map(),
       createdAt: new Date().toISOString()
     });
   }
@@ -201,13 +225,14 @@ function publicRoomState(roomKey, room) {
     text: room.text,
     items: room.items,
     chat: room.chat,
+    participants: participantsFor(room),
     createdAt: room.createdAt
   };
 }
 
 function emitPresence(roomKey) {
-  const size = io.sockets.adapter.rooms.get(roomKey)?.size || 0;
-  io.to(roomKey).emit("presence:update", size);
+  const room = getRoom(roomKey);
+  io.to(roomKey).emit("presence:update", participantsFor(room));
 }
 
 function cleanItem(payload) {
@@ -224,7 +249,13 @@ function cleanItem(payload) {
   };
 }
 
-async function askOpenRouter(chat) {
+async function askOpenRouter(chat, files = [], latestMessage = "", userName = "Guest") {
+  const latestContent = buildLatestChatContent(latestMessage, files, userName);
+  const history = chat.slice(-12, -1).map((message) => ({
+    role: message.role,
+    content: message.content
+  }));
+
   const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -238,12 +269,13 @@ async function askOpenRouter(chat) {
       messages: [
         {
           role: "system",
-          content: "You are the helpful Zneish room assistant. Keep answers clear, useful, and beginner friendly."
+          content: "You are the helpful Zneish room assistant. Keep answers clear, useful, and beginner friendly. If users attach files, explain what you can infer from file names, text contents, or images."
         },
-        ...chat.slice(-12).map((message) => ({
-          role: message.role,
-          content: message.content
-        }))
+        ...history,
+        {
+          role: "user",
+          content: latestContent
+        }
       ]
     })
   });
@@ -254,6 +286,58 @@ async function askOpenRouter(chat) {
 
   const data = await response.json();
   return data.choices?.[0]?.message?.content || "I could not make an answer.";
+}
+
+function buildLatestChatContent(message, files, userName) {
+  const parts = [];
+  const intro = `${userName} asks: ${message || "Please review the attached files."}`;
+  parts.push({ type: "text", text: intro });
+
+  for (const file of files.slice(0, 10)) {
+    if (file.mimetype.startsWith("image/")) {
+      parts.push({
+        type: "image_url",
+        image_url: {
+          url: `data:${file.mimetype};base64,${file.buffer.toString("base64")}`
+        }
+      });
+    } else {
+      parts.push({
+        type: "text",
+        text: describeUploadedFile(file)
+      });
+    }
+  }
+
+  return parts;
+}
+
+function describeUploadedFile(file) {
+  const base = `Attached file: ${file.originalname} (${file.mimetype || "unknown type"}, ${file.size} bytes).`;
+  if (file.mimetype.startsWith("text/") || file.originalname.match(/\.(txt|md|csv|json|js|css|html)$/i)) {
+    return `${base}\nFile text preview:\n${file.buffer.toString("utf8").slice(0, 12000)}`;
+  }
+  return `${base}\nThe server received this file, but only image files and plain text previews are readable by the AI in this version.`;
+}
+
+function fileSummary(file) {
+  return {
+    name: file.originalname,
+    mime: file.mimetype,
+    size: file.size
+  };
+}
+
+function participantsFor(room) {
+  return Array.from(room.users.values()).map((user) => ({
+    id: user.id,
+    name: user.name,
+    joinedAt: user.joinedAt
+  }));
+}
+
+function cleanName(value) {
+  return String(value || "Guest").trim().replace(/\s+/g, " ").slice(0, 32) || "Guest";
 }
 
 function normalizeRoomKey(value) {

@@ -24,19 +24,21 @@ const copyInvite = document.querySelector("#copyInvite");
 const globalMode = document.querySelector("#globalMode");
 const localMode = document.querySelector("#localMode");
 const modeHelp = document.querySelector("#modeHelp");
-const chatForm = document.querySelector("#chatForm");
-const chatInput = document.querySelector("#chatInput");
-const chatLog = document.querySelector("#chatLog");
-const aiToggle = document.querySelector("#aiToggle");
-const aiClose = document.querySelector("#aiClose");
-const assistantDrawer = document.querySelector("#assistantDrawer");
+const aiLink = document.querySelector("#aiLink");
 const gamesToggle = document.querySelector("#gamesToggle");
 const gamesClose = document.querySelector("#gamesClose");
 const gamesDrawer = document.querySelector("#gamesDrawer");
+const joinGate = document.querySelector("#joinGate");
+const nameJoinForm = document.querySelector("#nameJoinForm");
+const displayNameInput = document.querySelector("#displayNameInput");
+const gateRoomInput = document.querySelector("#gateRoomInput");
+const peopleCount = document.querySelector("#peopleCount");
+const peopleList = document.querySelector("#peopleList");
 
 let currentRoomKey = getInitialRoomKey();
+let displayName = localStorage.getItem("zneish-name") || "";
 let items = [];
-let chat = [];
+let participants = [];
 let typingTimer;
 let remoteUpdate = false;
 
@@ -46,26 +48,26 @@ if (savedTheme === "dark") {
   themeToggle.checked = true;
 }
 
-joinRoom(currentRoomKey);
+showJoinGate();
 setupTextSharing();
 setupRoomControls();
 setupSharingTools();
 setupUploads();
-setupChat();
 setupDrawers();
 setupGames();
 
 socket.on("connect", () => {
   presence.textContent = "Connected";
-  joinRoom(currentRoomKey);
+  if (displayName) joinRoom(currentRoomKey);
 });
 
 socket.on("disconnect", () => {
   presence.textContent = "Offline";
 });
 
-socket.on("presence:update", (count) => {
-  presence.textContent = `${count} online`;
+socket.on("presence:update", (users) => {
+  participants = Array.isArray(users) ? users : [];
+  renderParticipants();
 });
 
 socket.on("state:init", (state) => {
@@ -80,9 +82,10 @@ socket.on("state:init", (state) => {
   remoteUpdate = false;
 
   items = Array.isArray(state.items) ? state.items : [];
-  chat = Array.isArray(state.chat) ? state.chat : [];
+  participants = Array.isArray(state.participants) ? state.participants : [];
   renderFeed();
-  renderChat();
+  renderParticipants();
+  updateAiLink();
 });
 
 socket.on("text:update", (text) => {
@@ -94,11 +97,6 @@ socket.on("text:update", (text) => {
 socket.on("item:add", (item) => {
   items = [item, ...items.filter((oldItem) => oldItem.id !== item.id)].slice(0, 80);
   renderFeed();
-});
-
-socket.on("chat:add", (message) => {
-  chat = [...chat, message].slice(-30);
-  renderChat();
 });
 
 function setupTextSharing() {
@@ -116,6 +114,7 @@ function setupTextSharing() {
 
 function setupRoomControls() {
   createRoom.addEventListener("click", async () => {
+    if (!ensureName()) return;
     const response = await fetch("/api/rooms", { method: "POST" });
     const data = await response.json();
     joinRoom(data.roomKey);
@@ -124,8 +123,19 @@ function setupRoomControls() {
 
   joinRoomForm.addEventListener("submit", (event) => {
     event.preventDefault();
+    if (!ensureName()) return;
     const roomKey = normalizeRoomKey(roomInput.value);
     joinRoom(roomKey);
+  });
+
+  nameJoinForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    displayName = displayNameInput.value.trim().replace(/\s+/g, " ").slice(0, 32);
+    currentRoomKey = normalizeRoomKey(gateRoomInput.value || roomInput.value || currentRoomKey);
+    if (!displayName) return;
+    localStorage.setItem("zneish-name", displayName);
+    joinGate.classList.add("hidden");
+    joinRoom(currentRoomKey);
   });
 
   copyInvite.addEventListener("click", async () => {
@@ -214,55 +224,10 @@ function setupUploads() {
   });
 }
 
-function setupChat() {
-  chatForm.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    const message = chatInput.value.trim();
-    if (!message) return;
-
-    chatInput.value = "";
-    chatInput.disabled = true;
-    try {
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          roomKey: currentRoomKey,
-          message
-        })
-      });
-
-      if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-        throw new Error(data.message || "AI chat failed.");
-      }
-    } catch (error) {
-      toast(error.message);
-    } finally {
-      chatInput.disabled = false;
-      chatInput.focus();
-    }
-  });
-}
-
 function setupDrawers() {
-  aiToggle.addEventListener("click", () => {
-    assistantDrawer.classList.toggle("open");
-    assistantDrawer.setAttribute("aria-hidden", assistantDrawer.classList.contains("open") ? "false" : "true");
-    gamesDrawer.classList.remove("open");
-    gamesDrawer.setAttribute("aria-hidden", "true");
-  });
-
-  aiClose.addEventListener("click", () => {
-    assistantDrawer.classList.remove("open");
-    assistantDrawer.setAttribute("aria-hidden", "true");
-  });
-
   gamesToggle.addEventListener("click", () => {
     gamesDrawer.classList.toggle("open");
     gamesDrawer.setAttribute("aria-hidden", gamesDrawer.classList.contains("open") ? "false" : "true");
-    assistantDrawer.classList.remove("open");
-    assistantDrawer.setAttribute("aria-hidden", "true");
   });
 
   gamesClose.addEventListener("click", () => {
@@ -275,7 +240,12 @@ function joinRoom(roomKey) {
   currentRoomKey = normalizeRoomKey(roomKey);
   roomKeyLabel.textContent = currentRoomKey;
   roomInput.value = currentRoomKey;
-  socket.emit("room:join", { roomKey: currentRoomKey });
+  gateRoomInput.value = currentRoomKey;
+  updateAiLink();
+  socket.emit("room:join", {
+    roomKey: currentRoomKey,
+    name: displayName || "Guest"
+  });
 }
 
 function setMode(mode) {
@@ -358,24 +328,53 @@ function renderFeed() {
   }
 }
 
-function renderChat() {
-  chatLog.replaceChildren();
-  if (!chat.length) {
-    const empty = document.createElement("div");
-    empty.className = "chat-message";
-    empty.innerHTML = "<strong>Zneish AI</strong><p>Ask me anything. Add OPENROUTER_API_KEY in your environment to enable this.</p>";
-    chatLog.append(empty);
+function renderParticipants() {
+  peopleList.replaceChildren();
+  peopleCount.textContent = participants.length;
+  presence.textContent = `${participants.length} online`;
+
+  if (!participants.length) {
+    const node = document.createElement("div");
+    node.className = "person empty";
+    node.textContent = "No one has joined yet.";
+    peopleList.append(node);
     return;
   }
 
-  for (const message of chat) {
+  for (const user of participants) {
     const node = document.createElement("div");
-    node.className = "chat-message";
-    const name = message.role === "assistant" ? "Zneish AI" : "You";
-    node.innerHTML = `<strong>${escapeHtml(name)}</strong><p>${escapeHtml(message.content)}</p>`;
-    chatLog.append(node);
+    node.className = "person";
+    const initial = (user.name || "G").slice(0, 1).toUpperCase();
+    node.innerHTML = `<span>${escapeHtml(initial)}</span><strong>${escapeHtml(user.name || "Guest")}</strong>`;
+    peopleList.append(node);
   }
-  chatLog.scrollTop = chatLog.scrollHeight;
+}
+
+function showJoinGate() {
+  displayNameInput.value = displayName;
+  gateRoomInput.value = currentRoomKey;
+  roomInput.value = currentRoomKey;
+  if (displayName) {
+    joinGate.classList.add("hidden");
+    joinRoom(currentRoomKey);
+  } else {
+    joinGate.classList.remove("hidden");
+    setTimeout(() => displayNameInput.focus(), 50);
+  }
+}
+
+function ensureName() {
+  if (displayName) return true;
+  joinGate.classList.remove("hidden");
+  displayNameInput.focus();
+  return false;
+}
+
+function updateAiLink() {
+  const url = new URL("/assistant.html", window.location.origin);
+  url.searchParams.set("room", currentRoomKey);
+  url.searchParams.set("name", displayName || "Guest");
+  aiLink.href = url.toString();
 }
 
 function getInitialRoomKey() {
@@ -470,6 +469,7 @@ function setupGames() {
   let activeGame = "snake";
   let timer = null;
   let keys = {};
+  let taps = {};
   let state = {};
 
   const descriptions = {
@@ -503,6 +503,7 @@ function setupGames() {
   });
 
   window.addEventListener("keydown", (event) => {
+    if (isTypingTarget(event.target)) return;
     keys[event.key.toLowerCase()] = true;
     if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].includes(event.key)) {
       event.preventDefault();
@@ -510,7 +511,26 @@ function setupGames() {
   });
 
   window.addEventListener("keyup", (event) => {
+    if (isTypingTarget(event.target)) return;
     keys[event.key.toLowerCase()] = false;
+  });
+
+  document.querySelectorAll("[data-control]").forEach((button) => {
+    const key = button.dataset.control;
+    const press = (event) => {
+      event.preventDefault();
+      keys[key] = true;
+      taps[key] = true;
+      if (activeGame === "flappy" && key === " ") keys[" "] = true;
+    };
+    const release = (event) => {
+      event.preventDefault();
+      keys[key] = false;
+    };
+    button.addEventListener("pointerdown", press);
+    button.addEventListener("pointerup", release);
+    button.addEventListener("pointercancel", release);
+    button.addEventListener("pointerleave", release);
   });
 
   drawBlank(ctx, canvas);
@@ -526,10 +546,11 @@ function setupGames() {
   }
 
   function updateSnake() {
-    if (keys.arrowup || keys.w) state.dir = { x: 0, y: -1 };
-    if (keys.arrowdown || keys.s) state.dir = { x: 0, y: 1 };
-    if (keys.arrowleft || keys.a) state.dir = { x: -1, y: 0 };
-    if (keys.arrowright || keys.d) state.dir = { x: 1, y: 0 };
+    if (keys.arrowup || keys.w || taps.arrowup) state.dir = { x: 0, y: -1 };
+    if (keys.arrowdown || keys.s || taps.arrowdown) state.dir = { x: 0, y: 1 };
+    if (keys.arrowleft || keys.a || taps.arrowleft) state.dir = { x: -1, y: 0 };
+    if (keys.arrowright || keys.d || taps.arrowright) state.dir = { x: 1, y: 0 };
+    taps = {};
 
     const head = {
       x: state.snake[0].x + state.dir.x,
@@ -563,11 +584,13 @@ function setupGames() {
   }
 
   function updateFlappy() {
-    if (keys[" "] || keys.arrowup || keys.w) {
+    if (keys[" "] || keys.arrowup || keys.w || taps[" "] || taps.arrowup) {
       state.bird.velocity = -5.5;
       keys[" "] = false;
       keys.arrowup = false;
       keys.w = false;
+      taps[" "] = false;
+      taps.arrowup = false;
     }
 
     state.bird.velocity += 0.35;
@@ -609,23 +632,27 @@ function setupGames() {
   }
 
   function updateTetris() {
-    if (keys.arrowleft || keys.a) {
+    if (keys.arrowleft || keys.a || taps.arrowleft) {
       movePiece(-1, 0);
       keys.arrowleft = false;
       keys.a = false;
+      taps.arrowleft = false;
     }
-    if (keys.arrowright || keys.d) {
+    if (keys.arrowright || keys.d || taps.arrowright) {
       movePiece(1, 0);
       keys.arrowright = false;
       keys.d = false;
+      taps.arrowright = false;
     }
-    if (keys.arrowup || keys.w) {
+    if (keys.arrowup || keys.w || taps.arrowup) {
       rotatePiece();
       keys.arrowup = false;
       keys.w = false;
+      taps.arrowup = false;
     }
 
-    state.tick += keys.arrowdown || keys.s ? 6 : 1;
+    state.tick += keys.arrowdown || keys.s || taps.arrowdown ? 6 : 1;
+    taps.arrowdown = false;
     if (state.tick >= 8) {
       state.tick = 0;
       if (!movePiece(0, 1)) lockPiece();
@@ -758,4 +785,8 @@ function setupGames() {
     if (timer) window.clearInterval(timer);
     timer = null;
   }
+}
+
+function isTypingTarget(target) {
+  return target?.matches?.("input, textarea, select, [contenteditable='true']");
 }

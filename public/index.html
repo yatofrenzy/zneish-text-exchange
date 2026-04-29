@@ -18,7 +18,7 @@
         </a>
 
         <nav class="nav-actions" aria-label="Main actions">
-          <button id="aiToggle" type="button">AI Assistant</button>
+          <a class="nav-link primary" id="aiLink" href="/assistant.html">AI Assistant</a>
           <button id="gamesToggle" type="button">Games</button>
           <span class="status-pill"><span class="pulse"></span><span id="presence">Connecting</span></span>
           <label class="toggle" title="Toggle dark mode">
@@ -28,96 +28,106 @@
         </nav>
       </header>
 
-      <main class="main">
-        <section class="room-strip" aria-labelledby="roomTitle">
-          <div>
-            <p class="eyebrow">Private room</p>
-            <h1 id="roomTitle">Share text, links, files, and photos in realtime</h1>
-          </div>
-
-          <div class="room-actions">
-            <button id="createRoom" type="button">Create Room</button>
-            <form id="joinRoomForm">
-              <input id="roomInput" maxlength="10" placeholder="Room key" aria-label="Room key" />
-              <button type="submit">Join</button>
-            </form>
-            <button id="copyInvite" type="button">Copy Invite</button>
-          </div>
-
-          <div class="room-meta">
-            <strong id="roomKeyLabel">PUBLIC</strong>
-            <span id="modeHelp">Global link works on Render. Local Wi-Fi works on the same network.</span>
-            <div class="mode-switch" role="group" aria-label="Network mode">
-              <button class="active" id="globalMode" type="button">Global</button>
-              <button id="localMode" type="button">Local Wi-Fi</button>
-            </div>
-          </div>
-        </section>
-
-        <section class="workspace" aria-label="Realtime text sharing">
-          <div class="toolbar" aria-label="Text tools">
-            <button id="downloadText" type="button">Download</button>
-            <button id="copyText" type="button">Copy</button>
-            <button id="pasteText" type="button">Paste</button>
-            <button id="uploadButton" type="button">Upload</button>
-            <button id="refreshRoom" type="button">Refresh</button>
-            <button id="clearAll" type="button">Clear</button>
-          </div>
-
-          <textarea
-            id="sharedText"
-            spellcheck="true"
-            placeholder="Start typing here. Everyone in this room sees this text live..."
-            aria-label="Realtime shared text"
-          ></textarea>
-
-          <form class="quick-share" id="quickShare">
-            <input
-              id="quickInput"
-              type="text"
-              autocomplete="off"
-              placeholder="Paste a link or short note"
-              aria-label="Paste a link or short note"
-            />
-            <button type="submit">Share</button>
-          </form>
-
-          <div class="drop-zone" id="dropZone">
-            <input id="fileInput" type="file" multiple />
+      <main class="main with-sidebar">
+        <div class="content-stack">
+          <section class="room-strip" aria-labelledby="roomTitle">
             <div>
-              <strong>Drop files or photos here</strong>
-              <span>or click Upload</span>
+              <p class="eyebrow">Private room</p>
+              <h1 id="roomTitle">Share text, links, files, and photos in realtime</h1>
             </div>
-          </div>
-        </section>
 
-        <section class="feed-panel" aria-labelledby="feedTitle">
+            <div class="room-actions">
+              <button id="createRoom" type="button">Create Room</button>
+              <form id="joinRoomForm">
+                <input id="roomInput" maxlength="10" placeholder="Room key" aria-label="Room key" />
+                <button type="submit">Join</button>
+              </form>
+              <button id="copyInvite" type="button">Copy Invite</button>
+            </div>
+
+            <div class="room-meta">
+              <strong id="roomKeyLabel">PUBLIC</strong>
+              <span id="modeHelp">Global link works on Render. Local Wi-Fi works on the same network.</span>
+              <div class="mode-switch" role="group" aria-label="Network mode">
+                <button class="active" id="globalMode" type="button">Global</button>
+                <button id="localMode" type="button">Local Wi-Fi</button>
+              </div>
+            </div>
+          </section>
+
+          <section class="workspace" aria-label="Realtime text sharing">
+            <div class="toolbar" aria-label="Text tools">
+              <button id="downloadText" type="button">Download</button>
+              <button id="copyText" type="button">Copy</button>
+              <button id="pasteText" type="button">Paste</button>
+              <button id="uploadButton" type="button">Upload</button>
+              <button id="refreshRoom" type="button">Refresh</button>
+              <button id="clearAll" type="button">Clear</button>
+            </div>
+
+            <textarea
+              id="sharedText"
+              spellcheck="true"
+              placeholder="Start typing here. Everyone in this room sees this text live..."
+              aria-label="Realtime shared text"
+            ></textarea>
+
+            <form class="quick-share" id="quickShare">
+              <input
+                id="quickInput"
+                type="text"
+                autocomplete="off"
+                placeholder="Paste a link or short note"
+                aria-label="Paste a link or short note"
+              />
+              <button type="submit">Share</button>
+            </form>
+
+            <div class="drop-zone" id="dropZone">
+              <input id="fileInput" type="file" multiple />
+              <div>
+                <strong>Drop files or photos here</strong>
+                <span>or click Upload</span>
+              </div>
+            </div>
+          </section>
+
+          <section class="feed-panel" aria-labelledby="feedTitle">
+            <div class="panel-head">
+              <div>
+                <p class="eyebrow">Shared items</p>
+                <h2 id="feedTitle">Links and files</h2>
+              </div>
+              <span class="count" id="itemCount">0</span>
+            </div>
+            <div class="feed" id="feed"></div>
+          </section>
+        </div>
+
+        <aside class="people-panel" aria-labelledby="peopleTitle">
           <div class="panel-head">
             <div>
-              <p class="eyebrow">Shared items</p>
-              <h2 id="feedTitle">Links and files</h2>
+              <p class="eyebrow">Connected</p>
+              <h2 id="peopleTitle">People in room</h2>
             </div>
-            <span class="count" id="itemCount">0</span>
+            <span class="count" id="peopleCount">0</span>
           </div>
-          <div class="feed" id="feed"></div>
-        </section>
+          <div class="people-list" id="peopleList"></div>
+        </aside>
       </main>
     </div>
 
-    <aside class="assistant-drawer" id="assistantDrawer" aria-labelledby="aiTitle" aria-hidden="true">
-      <div class="drawer-head">
+    <div class="join-gate" id="joinGate" role="dialog" aria-labelledby="joinTitle" aria-modal="true">
+      <form class="join-card" id="nameJoinForm">
         <div>
-          <p class="eyebrow">AI assistant</p>
-          <h2 id="aiTitle">Ask in this room</h2>
+          <p class="eyebrow">Join room</p>
+          <h2 id="joinTitle">Choose a temporary name</h2>
         </div>
-        <button id="aiClose" type="button">Close</button>
-      </div>
-      <div class="chat-log" id="chatLog"></div>
-      <form class="chat-form" id="chatForm">
-        <input id="chatInput" placeholder="Ask anything..." aria-label="Ask AI" />
-        <button type="submit">Ask</button>
+        <input id="displayNameInput" maxlength="32" placeholder="Your name" autocomplete="nickname" required />
+        <input id="gateRoomInput" maxlength="10" placeholder="Room key" />
+        <button type="submit">Join Room</button>
       </form>
-    </aside>
+    </div>
 
     <aside class="games-drawer" id="gamesDrawer" aria-labelledby="gamesTitle" aria-hidden="true">
       <div class="drawer-head">
@@ -142,6 +152,13 @@
           <span id="gameScore">Score: 0</span>
           <p id="gameHelp">Use arrow keys or WASD. Avoid walls and your tail.</p>
           <button id="startGame" type="button">Start Game</button>
+          <div class="touch-controls" aria-label="Mobile game controls">
+            <button data-control="arrowup" type="button">Up</button>
+            <button data-control="arrowleft" type="button">Left</button>
+            <button data-control=" " type="button">Flap</button>
+            <button data-control="arrowright" type="button">Right</button>
+            <button data-control="arrowdown" type="button">Down</button>
+          </div>
           <div class="murder-box" id="murderBox" hidden>
             <p id="murderQuestion"></p>
             <div id="murderChoices"></div>

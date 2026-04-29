@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Zneish AI Assistant</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" id="homeLink" href="/" aria-label="Back to room">
+        <span class="brand-mark">Z</span>
+        <span>
+          <strong>Zneish AI</strong>
+          <small>Assistant Room</small>
+        </span>
+      </a>
+
+      <nav class="nav-actions" aria-label="Assistant actions">
+        <a class="nav-link" id="backToRoom" href="/">Back to Room</a>
+        <span class="status-pill"><span class="pulse"></span><span id="assistantRoom">Room</span></span>
+      </nav>
+    </header>
+
+    <main class="assistant-page">
+      <section class="assistant-hero">
+        <p class="eyebrow">AI assistant</p>
+        <h1>Ask questions with photos, PDFs, and files</h1>
+        <p>Attach up to 10 files. Images and text-like files are readable by the assistant; other files are sent with name, type, and size information.</p>
+      </section>
+
+      <section class="assistant-chat" aria-label="AI chat">
+        <div class="chat-log large" id="chatLog"></div>
+
+        <form class="assistant-compose" id="chatForm">
+          <textarea id="chatInput" rows="4" placeholder="Ask anything..." aria-label="Ask AI"></textarea>
+          <div class="attach-row">
+            <label class="file-button">
+              <input id="aiFiles" type="file" multiple accept="image/*,.pdf,.txt,.md,.csv,.json,.js,.css,.html" />
+              Add files
+            </label>
+            <span id="fileHint">0 / 10 files selected</span>
+            <button type="button" id="clearFiles">Clear Files</button>
+            <button type="submit">Ask AI</button>
+          </div>
+          <div class="file-list" id="fileList"></div>
+        </form>
+      </section>
+    </main>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/assistant.js"></script>
+  </body>
+</html>
