@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>World Guesser</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIINfQ/1tVtvQUzCwL5GZduQArPmb3r6Y5Q="
+      crossorigin=""
+    />
+  </head>
+  <body>
+    <header class="topbar world-topbar">
+      <a class="brand" href="/" aria-label="Back to Zneish">
+        <span class="brand-mark">WG</span>
+        <span>
+          <strong>World Guesser</strong>
+          <small>Map Challenge</small>
+        </span>
+      </a>
+
+      <nav class="nav-actions" aria-label="World Guesser navigation">
+        <a class="nav-link" href="/">Text Exchange</a>
+        <a class="nav-link" href="/assistant.html">AI Assistant</a>
+        <a class="nav-link" href="/games.html">Games</a>
+        <span class="status-pill"><span class="pulse"></span><span id="roundScore">Score 0</span></span>
+      </nav>
+    </header>
+
+    <main class="world-page">
+      <section class="world-hero">
+        <div class="world-copy">
+          <p class="eyebrow">Singleplayer round</p>
+          <h1>Guess the real-world location</h1>
+          <p>Look at the photo clue, click your guess on the world map, then submit to calculate distance and score.</p>
+          <button class="send-button" id="newRound" type="button">New Round</button>
+        </div>
+        <img id="locationImage" alt="Mystery location" />
+      </section>
+
+      <section class="world-board">
+        <div id="worldMap" aria-label="Interactive world map"></div>
+        <div class="world-actions">
+          <span id="guessHint">Click the map to place your guess.</span>
+          <button class="send-button" id="submitGuess" type="button" disabled>Submit Guess</button>
+        </div>
+      </section>
+
+      <section class="world-result" id="resultPanel" hidden>
+        <div>
+          <p class="eyebrow">Result</p>
+          <h2 id="resultTitle">Round score</h2>
+        </div>
+        <div class="result-grid">
+          <div><span>Actual</span><strong id="actualName"></strong></div>
+          <div><span>Distance</span><strong id="distanceText"></strong></div>
+          <div><span>Points</span><strong id="pointsText"></strong></div>
+        </div>
+      </section>
+    </main>
+
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+    ></script>
+    <script src="/world-guesser.js"></script>
+  </body>
+</html>
