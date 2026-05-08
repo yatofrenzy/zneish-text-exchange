@@ -12,7 +12,8 @@ Zneish Text Exchange is a realtime room-based sharing website. People create a r
 - Global mode for deployed internet sharing
 - Local Wi-Fi mode guidance for same-network sharing
 - AI chat using OpenRouter through a safe server environment variable
-- Built-in Snake, Tetris, Flappy, and Murder Guess games
+- AI-created downloadable Word and PowerPoint files from prompts
+- Built-in Snake, Tetris, and Flappy games
 - Dark mode and responsive UI
 
 ## Important API key safety

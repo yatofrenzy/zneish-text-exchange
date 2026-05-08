@@ -20,8 +20,6 @@ const aiStatus = document.querySelector("#aiStatus");
 const newChat = document.querySelector("#newChat");
 const sessionList = document.querySelector("#sessionList");
 const chatTitle = document.querySelector("#chatTitle");
-const exportDocx = document.querySelector("#exportDocx");
-const exportPptx = document.querySelector("#exportPptx");
 
 let chat = [];
 let sessions = [];
@@ -113,6 +111,13 @@ chatForm.addEventListener("submit", async (event) => {
   }
 });
 
+chatInput.addEventListener("keydown", (event) => {
+  if (event.key === "Enter" && !event.shiftKey) {
+    event.preventDefault();
+    chatForm.requestSubmit();
+  }
+});
+
 aiFiles.addEventListener("change", () => {
   selectedFiles = Array.from(aiFiles.files || []).slice(0, 10);
   if ((aiFiles.files || []).length > 10) toast("Only the first 10 files were selected.");
@@ -124,9 +129,6 @@ clearFiles.addEventListener("click", () => {
   aiFiles.value = "";
   renderFiles();
 });
-
-exportDocx.addEventListener("click", () => exportChat("docx"));
-exportPptx.addEventListener("click", () => exportChat("pptx"));
 
 async function ensureSession() {
   if (currentSessionId) {
@@ -177,7 +179,8 @@ function renderChat() {
     const files = Array.isArray(message.attachments) && message.attachments.length
       ? `<small>${message.attachments.map((file) => escapeHtml(file.name)).join(", ")}</small>`
       : "";
-    node.innerHTML = `<strong>${name}</strong><p>${formatAssistantText(message.content || "")}</p>${files}`;
+    const artifacts = renderArtifacts(message.artifacts);
+    node.innerHTML = `<strong>${name}</strong><p>${formatAssistantText(message.content || "")}</p>${files}${artifacts}`;
     chatLog.append(node);
   }
 
@@ -221,32 +224,21 @@ function renderFiles() {
   });
 }
 
-async function exportChat(type) {
-  await ensureSession();
-  const response = await fetch(`/api/export/${type}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ roomKey, sessionId: currentSessionId })
-  });
-  if (!response.ok) {
-    toast(`Could not create ${type.toUpperCase()} file.`);
-    return;
-  }
-  const blob = await response.blob();
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = type === "docx" ? "zneish-ai-chat.docx" : "zneish-ai-chat.pptx";
-  link.click();
-  URL.revokeObjectURL(url);
-}
-
 function setSessionInUrl(sessionId) {
   const url = new URL(window.location.href);
   url.searchParams.set("room", roomKey);
   url.searchParams.set("name", userName);
   url.searchParams.set("session", sessionId);
   window.history.replaceState({}, "", url);
+}
+
+function renderArtifacts(artifacts) {
+  if (!Array.isArray(artifacts) || !artifacts.length) return "";
+  const links = artifacts.map((artifact) => {
+    const label = artifact.type === "pptx" ? "Download PowerPoint" : "Download Word";
+    return `<a class="artifact-link" href="${escapeHtml(artifact.url)}" download>${label}<span>${escapeHtml(artifact.title || "")}</span></a>`;
+  }).join("");
+  return `<div class="artifact-list">${links}</div>`;
 }
 
 function normalizeRoomKey(value) {

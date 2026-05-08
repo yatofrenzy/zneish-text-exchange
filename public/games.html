@@ -19,7 +19,6 @@
       <nav class="nav-actions" aria-label="Game actions">
         <a class="nav-link" id="backToRoom" href="/">Back to Room</a>
         <a class="nav-link primary" id="assistantLink" href="/assistant.html">AI Assistant</a>
-        <a class="nav-link" id="worldGuesserLink" href="/world-guesser.html">World Guesser</a>
         <span class="status-pill"><span class="pulse"></span><span id="gameRoom">Room</span></span>
       </nav>
     </header>
@@ -36,7 +35,6 @@
           <button class="active" data-game="snake" type="button">Snake</button>
           <button data-game="tetris" type="button">Tetris</button>
           <button data-game="flappy" type="button">Flappy</button>
-          <button data-game="murder" type="button">Murder Guess</button>
         </div>
 
         <div class="game-stage full">
@@ -52,10 +50,6 @@
               <button data-control=" " type="button">Flap</button>
               <button data-control="arrowright" type="button">Right</button>
               <button data-control="arrowdown" type="button">Down</button>
-            </div>
-            <div class="murder-box" id="murderBox" hidden>
-              <p id="murderQuestion"></p>
-              <div id="murderChoices"></div>
             </div>
           </div>
         </div>

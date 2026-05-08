@@ -23,9 +23,6 @@ function setupGames() {
   const gameScore = document.querySelector("#gameScore");
   const gameHelp = document.querySelector("#gameHelp");
   const startGame = document.querySelector("#startGame");
-  const murderBox = document.querySelector("#murderBox");
-  const murderQuestion = document.querySelector("#murderQuestion");
-  const murderChoices = document.querySelector("#murderChoices");
   let activeGame = "snake";
   let timer = null;
   let keys = {};
@@ -35,8 +32,7 @@ function setupGames() {
   const descriptions = {
     snake: ["Snake", "Use arrow keys or WASD. Avoid walls and your tail."],
     tetris: ["Tetris", "Use left/right to move, up to rotate, down to drop faster."],
-    flappy: ["Flappy", "Press Space or tap Flap to fly through the gates."],
-    murder: ["Murder Guess", "Use the clues to guess the hidden suspect."]
+    flappy: ["Flappy", "Press Space or tap Flap to fly through the gates."]
   };
 
   document.querySelectorAll("[data-game]").forEach((button) => {
@@ -48,9 +44,7 @@ function setupGames() {
       gameName.textContent = descriptions[activeGame][0];
       gameHelp.textContent = descriptions[activeGame][1];
       gameScore.textContent = "Score: 0";
-      murderBox.hidden = activeGame !== "murder";
       drawBlank();
-      if (activeGame === "murder") startMurder();
     });
   });
 
@@ -59,7 +53,6 @@ function setupGames() {
     if (activeGame === "snake") startSnake();
     if (activeGame === "tetris") startTetris();
     if (activeGame === "flappy") startFlappy();
-    if (activeGame === "murder") startMurder();
   });
 
   window.addEventListener("keydown", (event) => {
@@ -268,41 +261,6 @@ function setupGames() {
     state.piece.shape.forEach((row, y) => row.forEach((cell, x) => {
       if (cell) drawRect(offsetX + (state.piece.x + x) * size, (state.piece.y + y) * size, size - 1, size - 1, "#ff6269");
     }));
-  }
-
-  function startMurder() {
-    stopGame();
-    murderBox.hidden = false;
-    const suspects = [
-      { name: "Asha", clues: ["wears glasses", "was in the kitchen", "likes chess"] },
-      { name: "Milan", clues: ["wears a hat", "was near the garden", "plays guitar"] },
-      { name: "Riya", clues: ["has a red scarf", "was in the library", "likes puzzles"] },
-      { name: "Dev", clues: ["wears boots", "was near the garage", "collects coins"] }
-    ];
-    const secret = suspects[Math.floor(Math.random() * suspects.length)];
-    state = { suspects, secret, questions: 0 };
-    clearCanvas();
-    ctx.fillStyle = "#ffffff";
-    ctx.font = "22px sans-serif";
-    ctx.fillText("Find the suspect", 86, 160);
-    murderQuestion.textContent = `Clue ${state.questions + 1}: The suspect ${secret.clues[state.questions]}. Who is it?`;
-    murderChoices.replaceChildren();
-    suspects.forEach((suspect) => {
-      const button = document.createElement("button");
-      button.type = "button";
-      button.textContent = suspect.name;
-      button.addEventListener("click", () => {
-        if (suspect.name === secret.name) {
-          gameScore.textContent = `Solved: ${secret.name}`;
-          murderQuestion.textContent = "Correct. You solved the room mystery.";
-        } else {
-          state.questions = Math.min(state.questions + 1, secret.clues.length - 1);
-          gameScore.textContent = "Wrong guess";
-          murderQuestion.textContent = `New clue: The suspect ${secret.clues[state.questions]}. Try again.`;
-        }
-      });
-      murderChoices.append(button);
-    });
   }
 
   function drawCell(x, y, color) {

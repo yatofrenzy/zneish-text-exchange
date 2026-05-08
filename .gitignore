@@ -1,5 +1,6 @@
 node_modules/
 public/uploads/
+public/generated/
 server.log
 server.err.log
 .env

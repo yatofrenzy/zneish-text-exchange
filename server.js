@@ -21,9 +21,11 @@ const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || "";
 const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free";
 const publicDir = path.join(__dirname, "public");
 const uploadRoot = path.join(publicDir, "uploads");
+const generatedDir = path.join(publicDir, "generated");
 const rooms = new Map();
 
 fs.mkdirSync(uploadRoot, { recursive: true });
+fs.mkdirSync(generatedDir, { recursive: true });
 
 const storage = multer.diskStorage({
   destination: (req, _file, cb) => {
@@ -144,17 +146,20 @@ app.post("/api/chat", chatUpload.array("files", 10), async (req, res) => {
   io.to(roomKey).emit("chat:sessions", chatSessionList(room));
 
   try {
+    const requestedArtifacts = detectRequestedArtifacts(message);
     const answer = cleanAssistantText(await askOpenRouter(session.messages, files, message, userName));
+    const artifacts = await createRequestedArtifacts(requestedArtifacts, answer, message);
     const assistantMessage = {
       id: createId(),
       role: "assistant",
       content: answer,
+      artifacts,
       createdAt: new Date().toISOString()
     };
     rememberChatMessage(room, session, assistantMessage);
     io.to(roomKey).emit("chat:add", { sessionId: session.id, message: assistantMessage });
     io.to(roomKey).emit("chat:sessions", chatSessionList(room));
-    res.json({ answer, sessionId: session.id });
+    res.json({ answer, artifacts, sessionId: session.id });
   } catch (error) {
     const failMessage = {
       id: createId(),
@@ -285,6 +290,88 @@ function joinRoom(socket, roomKey, name) {
   emitPresence(roomKey);
 }
 
+async function createRequestedArtifacts(requested, content, prompt) {
+  const artifacts = [];
+  if (!requested.docx && !requested.pptx) return artifacts;
+
+  const topic = extractArtifactTopic(prompt);
+  if (requested.docx) artifacts.push(await createWordArtifact(topic, content));
+  if (requested.pptx) artifacts.push(await createPowerPointArtifact(topic, content));
+  return artifacts;
+}
+
+async function createWordArtifact(topic, content) {
+  const title = topic || "Zneish Document";
+  const lines = contentLines(content);
+  const children = [
+    new Paragraph({
+      children: [new TextRun({ text: title, bold: true, size: 34 })]
+    }),
+    new Paragraph(" ")
+  ];
+
+  for (const line of lines) {
+    const heading = isLikelyHeading(line);
+    children.push(new Paragraph({
+      children: [new TextRun({ text: line, bold: heading, size: heading ? 26 : 22 })]
+    }));
+  }
+
+  const doc = new Document({ sections: [{ children }] });
+  const buffer = await Packer.toBuffer(doc);
+  const filename = uniqueGeneratedName(title, "docx");
+  fs.writeFileSync(path.join(generatedDir, filename), buffer);
+  return {
+    type: "docx",
+    title: `Word document: ${title}`,
+    url: `/generated/${filename}`
+  };
+}
+
+async function createPowerPointArtifact(topic, content) {
+  const title = topic || "Zneish Presentation";
+  const pptx = new pptxgen();
+  pptx.layout = "LAYOUT_WIDE";
+  pptx.author = "Zneish AI";
+  pptx.subject = title;
+  pptx.title = title;
+  pptx.company = "Zneish";
+
+  const titleSlide = pptx.addSlide();
+  titleSlide.background = { color: "0F172A" };
+  titleSlide.addText(title, { x: 0.7, y: 1.55, w: 12, h: 1, fontSize: 38, bold: true, color: "FFFFFF", fit: "shrink" });
+  titleSlide.addText("Created by Zneish AI", { x: 0.75, y: 2.65, w: 10, h: 0.35, fontSize: 16, color: "1ECBE1" });
+
+  const sections = splitContentForSlides(content);
+  const slideSections = sections.length ? sections.slice(0, 8) : [{ title: "Overview", bullets: contentLines(content).slice(0, 6) }];
+  for (const section of slideSections) {
+    const slide = pptx.addSlide();
+    slide.background = { color: "FFFFFF" };
+    slide.addShape(pptx.ShapeType.rect, { x: 0, y: 0, w: 13.33, h: 0.18, fill: { color: "1ECBE1" }, line: { color: "1ECBE1" } });
+    slide.addText(section.title || title, { x: 0.65, y: 0.45, w: 12, h: 0.55, fontSize: 25, bold: true, color: "0F172A", fit: "shrink" });
+    slide.addText(section.bullets.slice(0, 6).join("\n"), {
+      x: 0.8,
+      y: 1.25,
+      w: 11.8,
+      h: 4.7,
+      fontSize: 17,
+      color: "334155",
+      breakLine: false,
+      fit: "shrink",
+      bullet: { type: "ul" }
+    });
+  }
+
+  const buffer = await pptx.write({ outputType: "nodebuffer" });
+  const filename = uniqueGeneratedName(title, "pptx");
+  fs.writeFileSync(path.join(generatedDir, filename), buffer);
+  return {
+    type: "pptx",
+    title: `PowerPoint: ${title}`,
+    url: `/generated/${filename}`
+  };
+}
+
 function getRoom(roomKey) {
   const key = normalizeRoomKey(roomKey);
   if (!rooms.has(key)) {
@@ -401,7 +488,7 @@ async function askOpenRouter(chat, files = [], latestMessage = "", userName = "G
       messages: [
         {
           role: "system",
-          content: "You are the helpful Zneish room assistant. Keep answers clear, useful, and beginner friendly. Use extracted PDF text, uploaded text-file contents, and images when they are provided. If a PDF has no extracted text, say it may be scanned/protected and ask for page images or selectable text."
+          content: "You are the helpful Zneish room assistant. Keep answers clear, useful, and beginner friendly. Use extracted PDF text, uploaded text-file contents, and images when they are provided. If a PDF has no extracted text, say it may be scanned/protected and ask for page images or selectable text. When the user asks for a Word document, document, PowerPoint, PPT, slides, or presentation, write polished complete content for that exact topic with a clear title, useful sections, and practical bullets so the app can turn it into a downloadable file."
         },
         ...history,
         {
@@ -492,6 +579,71 @@ function cleanAssistantText(value) {
     .replace(/```[a-zA-Z0-9_-]*\n?/g, "")
     .replace(/```/g, "")
     .trim();
+}
+
+function detectRequestedArtifacts(message) {
+  const lower = String(message || "").toLowerCase();
+  const asksToCreate = /\b(make|create|generate|prepare|build|write|draft|give)\b/.test(lower);
+  return {
+    docx: asksToCreate && /\b(word|docx|document|report|essay|assignment)\b/.test(lower),
+    pptx: asksToCreate && /\b(powerpoint|power point|ppt|pptx|slides?|presentation)\b/.test(lower)
+  };
+}
+
+function extractArtifactTopic(message) {
+  const cleaned = String(message || "")
+    .replace(/\b(make|create|generate|prepare|build|write|draft|give|me|a|an|the|ready|downloadable|file|word|docx|document|report|essay|assignment|powerpoint|power point|ppt|pptx|slides?|presentation)\b/gi, " ")
+    .replace(/\b(on|about|for|of|regarding|topic)\b/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  return titleCase(cleaned || "Zneish AI Topic").slice(0, 90);
+}
+
+function contentLines(content) {
+  return String(content || "")
+    .split(/\n+/)
+    .map((line) => line.replace(/^[-*#\d.)\s]+/, "").trim())
+    .filter(Boolean)
+    .slice(0, 80);
+}
+
+function splitContentForSlides(content) {
+  const lines = contentLines(content);
+  const sections = [];
+  let current = null;
+
+  for (const line of lines) {
+    if (isLikelyHeading(line) || !current) {
+      current = { title: line, bullets: [] };
+      sections.push(current);
+    } else {
+      current.bullets.push(line);
+    }
+  }
+
+  return sections
+    .map((section) => ({
+      title: section.title,
+      bullets: section.bullets.length ? section.bullets : lines.filter((line) => line !== section.title).slice(0, 6)
+    }))
+    .filter((section) => section.bullets.length);
+}
+
+function isLikelyHeading(line) {
+  return line.length <= 70 && !/[.!?]$/.test(line) && line.split(" ").length <= 8;
+}
+
+function titleCase(value) {
+  return String(value || "").replace(/\w\S*/g, (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase());
+}
+
+function uniqueGeneratedName(topic, extension) {
+  const safe = String(topic || "zneish-ai")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 48) || "zneish-ai";
+  return `${Date.now()}-${safe}.${extension}`;
 }
 
 function normalizeSessionId(value) {
