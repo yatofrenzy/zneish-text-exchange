@@ -21,6 +21,7 @@ export class Renderer {
   }
 
   updateCamera(self, world) {
+    this.camera.scale = 1;
     const viewW = this.canvas.width / this.camera.scale;
     const viewH = this.canvas.height / this.camera.scale;
     const targetX = self ? self.x - viewW / 2 : world.width / 2 - viewW / 2;
@@ -36,10 +37,10 @@ export class Renderer {
     ctx.scale(scale, scale);
     ctx.translate(-this.camera.x, -this.camera.y);
 
-    ctx.fillStyle = "#08111f";
+    ctx.fillStyle = "#07111f";
     ctx.fillRect(0, 0, world.width, world.height);
 
-    ctx.strokeStyle = "rgba(34, 211, 238, 0.11)";
+    ctx.strokeStyle = "rgba(30, 203, 225, 0.12)";
     ctx.lineWidth = 1;
     for (let x = 0; x <= world.width; x += 100) {
       ctx.beginPath();
@@ -54,9 +55,12 @@ export class Renderer {
       ctx.stroke();
     }
 
-    ctx.strokeStyle = "rgba(30, 203, 225, 0.72)";
-    ctx.lineWidth = 8;
+    ctx.strokeStyle = "rgba(30, 203, 225, 0.82)";
+    ctx.lineWidth = 5;
     ctx.strokeRect(0, 0, world.width, world.height);
+
+    ctx.fillStyle = "rgba(30, 203, 225, 0.18)";
+    ctx.fillRect(0, 0, 4, world.height);
     ctx.restore();
   }
 
@@ -78,28 +82,34 @@ export class Renderer {
       this.renderPlayers.set(player.id, shown);
 
       ctx.globalAlpha = player.alive ? 1 : 0.36;
-      ctx.fillStyle = player.id === selfId ? "#1ecbe1" : "#fb4d8d";
+      ctx.shadowColor = player.id === selfId ? "rgba(30, 203, 225, 0.42)" : "rgba(251, 77, 141, 0.34)";
+      ctx.shadowBlur = 16;
+      ctx.fillStyle = player.id === selfId ? "#27cce0" : "#fb4d8d";
       ctx.beginPath();
       ctx.arc(shown.x, shown.y, 18, 0, Math.PI * 2);
       ctx.fill();
+      ctx.shadowBlur = 0;
 
       ctx.strokeStyle = "#f8fafc";
       ctx.lineWidth = 4;
+      ctx.lineCap = "round";
       ctx.beginPath();
-      ctx.moveTo(shown.x, shown.y);
-      ctx.lineTo(shown.x + Math.cos(shown.angle) * 30, shown.y + Math.sin(shown.angle) * 30);
+      ctx.moveTo(shown.x - Math.cos(shown.angle) * 3, shown.y - Math.sin(shown.angle) * 3);
+      ctx.lineTo(shown.x + Math.cos(shown.angle) * 31, shown.y + Math.sin(shown.angle) * 31);
       ctx.stroke();
 
       ctx.globalAlpha = 1;
       ctx.fillStyle = "#e2e8f0";
-      ctx.font = "14px sans-serif";
+      ctx.font = "700 14px sans-serif";
       ctx.textAlign = "center";
-      ctx.fillText(player.name, shown.x, shown.y - 30);
+      ctx.fillText(player.name, shown.x, shown.y - 29);
 
-      ctx.fillStyle = "rgba(255,255,255,0.22)";
-      ctx.fillRect(shown.x - 22, shown.y + 25, 44, 5);
-      ctx.fillStyle = player.health > 35 ? "#22d3ee" : "#fb4d8d";
-      ctx.fillRect(shown.x - 22, shown.y + 25, 44 * (player.health / 100), 5);
+      ctx.fillStyle = "rgba(15, 23, 42, 0.92)";
+      roundRect(ctx, shown.x - 23, shown.y + 25, 46, 5, 2);
+      ctx.fill();
+      ctx.fillStyle = player.health > 35 ? "#27cce0" : "#fb4d8d";
+      roundRect(ctx, shown.x - 23, shown.y + 25, 46 * (player.health / 100), 5, 2);
+      ctx.fill();
     }
 
     ctx.restore();
@@ -110,8 +120,17 @@ export class Renderer {
     ctx.save();
     ctx.scale(this.camera.scale, this.camera.scale);
     ctx.translate(-this.camera.x, -this.camera.y);
-    ctx.fillStyle = "#facc15";
     for (const bullet of bullets) {
+      const speed = Math.hypot(bullet.vx || 0, bullet.vy || 0) || 1;
+      const tailX = ((bullet.vx || 0) / speed) * 18;
+      const tailY = ((bullet.vy || 0) / speed) * 18;
+      ctx.strokeStyle = "rgba(250, 204, 21, 0.45)";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(bullet.x - tailX, bullet.y - tailY);
+      ctx.lineTo(bullet.x, bullet.y);
+      ctx.stroke();
+      ctx.fillStyle = "#facc15";
       ctx.beginPath();
       ctx.arc(bullet.x, bullet.y, 5, 0, Math.PI * 2);
       ctx.fill();
@@ -121,13 +140,28 @@ export class Renderer {
 
   resizeForDevice() {
     const rect = this.canvas.getBoundingClientRect();
-    const width = Math.max(640, Math.round(rect.width * window.devicePixelRatio));
-    const height = Math.max(360, Math.round(rect.height * window.devicePixelRatio));
+    const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+    const width = Math.max(640, Math.round(rect.width * pixelRatio));
+    const height = Math.max(360, Math.round(rect.height * pixelRatio));
     if (this.canvas.width !== width || this.canvas.height !== height) {
       this.canvas.width = width;
       this.canvas.height = height;
     }
   }
+}
+
+function roundRect(ctx, x, y, width, height, radius) {
+  const safeRadius = Math.min(radius, width / 2, height / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + safeRadius, y);
+  ctx.lineTo(x + width - safeRadius, y);
+  ctx.quadraticCurveTo(x + width, y, x + width, y + safeRadius);
+  ctx.lineTo(x + width, y + height - safeRadius);
+  ctx.quadraticCurveTo(x + width, y + height, x + width - safeRadius, y + height);
+  ctx.lineTo(x + safeRadius, y + height);
+  ctx.quadraticCurveTo(x, y + height, x, y + height - safeRadius);
+  ctx.lineTo(x, y + safeRadius);
+  ctx.quadraticCurveTo(x, y, x + safeRadius, y);
 }
 
 function lerp(a, b, amount) {

@@ -172,7 +172,9 @@ function snapshotRoom(room) {
     bullets: room.bullets.map((bullet) => ({
       id: bullet.id,
       x: Math.round(bullet.x),
-      y: Math.round(bullet.y)
+      y: Math.round(bullet.y),
+      vx: Math.round(bullet.vx),
+      vy: Math.round(bullet.vy)
     })),
     killFeed: room.killFeed.slice(-6)
   };

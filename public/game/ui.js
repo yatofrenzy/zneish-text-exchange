@@ -31,6 +31,7 @@ export class ArenaUI {
   }
 
   showMenu(message = "") {
+    document.body.classList.remove("is-playing");
     this.menuPanel.classList.remove("hidden");
     this.lobbyPanel.classList.add("hidden");
     this.gamePanel.classList.add("hidden");
@@ -38,6 +39,7 @@ export class ArenaUI {
   }
 
   showLobby(room, selfId) {
+    document.body.classList.remove("is-playing");
     this.menuPanel.classList.add("hidden");
     this.lobbyPanel.classList.remove("hidden");
     this.gamePanel.classList.add("hidden");
@@ -45,6 +47,7 @@ export class ArenaUI {
   }
 
   showGame() {
+    document.body.classList.add("is-playing");
     this.menuPanel.classList.add("hidden");
     this.lobbyPanel.classList.add("hidden");
     this.gamePanel.classList.remove("hidden");
@@ -89,6 +92,7 @@ export class ArenaUI {
       row.textContent = `${item.attacker} eliminated ${item.victim}`;
       this.killFeed.append(row);
     }
+    this.killFeed.classList.toggle("hidden", !(snapshot?.killFeed || []).length);
 
     const winner = snapshot?.winner;
     this.winnerScreen.classList.toggle("hidden", snapshot?.status !== "ended");
