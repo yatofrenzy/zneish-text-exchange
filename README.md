@@ -14,6 +14,7 @@ Zneish Text Exchange is a realtime room-based sharing website. People create a r
 - AI chat using OpenRouter through a safe server environment variable
 - AI-created downloadable Word and PowerPoint files from prompts
 - Built-in Snake, Tetris, and Flappy games
+- Online PvP shooter with quick match and private rooms
 - Dark mode and responsive UI
 
 ## Important API key safety
@@ -48,6 +49,21 @@ http://localhost:3000
 ```
 
 5. Create a room, copy the invite link, and open it in another tab to test realtime sharing.
+
+## Test the PvP shooter locally
+
+1. Start the app with `npm.cmd run dev`.
+2. Open:
+
+```text
+http://localhost:3000/game/
+```
+
+3. Enter a temporary name and click `Quick Match`.
+4. Open the same URL in a second browser tab, enter another name, and click `Quick Match`.
+5. Use `WASD` to move, mouse to aim, and left click to shoot.
+
+Private rooms work from the same page: create a private room, copy the room key, then join that key from another tab or another computer.
 
 ## Enable AI chat locally
 
@@ -84,6 +100,12 @@ Deploy to Render. Then people anywhere can open:
 
 ```text
 https://your-render-name.onrender.com?room=ROOMKEY
+```
+
+Friends can play the shooter globally at:
+
+```text
+https://your-render-name.onrender.com/game/
 ```
 
 ## Deploy to Render

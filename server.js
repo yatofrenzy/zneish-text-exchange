@@ -7,6 +7,7 @@ const { PDFParse } = require("pdf-parse");
 const { Server } = require("socket.io");
 const { Document, Packer, Paragraph, TextRun } = require("docx");
 const pptxgen = require("pptxgenjs");
+const { setupGameServer } = require("./server/gameServer");
 
 const app = express();
 const server = http.createServer(app);
@@ -268,6 +269,8 @@ io.on("connection", (socket) => {
     }
   });
 });
+
+setupGameServer(io);
 
 function joinRoom(socket, roomKey, name) {
   if (socket.data.roomKey) {

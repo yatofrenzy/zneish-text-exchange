@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Zneish Arena</title>
+    <link rel="stylesheet" href="/game/game.css" />
+  </head>
+  <body>
+    <div class="arena-shell">
+      <header class="arena-topbar">
+        <a class="arena-brand" href="/">
+          <span>Z</span>
+          <div>
+            <strong>Zneish Arena</strong>
+            <small>Online PvP shooter</small>
+          </div>
+        </a>
+        <nav>
+          <a href="/">Text Exchange</a>
+          <a href="/games.html">Games</a>
+          <a href="/assistant.html">AI Assistant</a>
+          <span id="connectionStatus" class="status">Connecting</span>
+        </nav>
+      </header>
+
+      <main class="arena-main">
+        <section id="menuPanel" class="panel menu-panel">
+          <div>
+            <p class="eyebrow">Multiplayer arena</p>
+            <h1>Join a fast private or public shooter match</h1>
+            <p class="lead">No login. Pick a temporary name, invite friends with a room key, or jump into quick match.</p>
+          </div>
+
+          <label>
+            Display name
+            <input id="playerName" maxlength="18" placeholder="Your name" autocomplete="nickname" />
+          </label>
+
+          <div class="menu-grid">
+            <button id="quickMatch" class="primary" type="button">Quick Match</button>
+            <button id="createPrivate" type="button">Create Private Room</button>
+          </div>
+
+          <form id="joinPrivateForm" class="join-row">
+            <input id="roomKeyInput" maxlength="10" placeholder="Private room key" />
+            <button type="submit">Join Room</button>
+          </form>
+
+          <p id="menuMessage" class="message" role="status"></p>
+        </section>
+
+        <section id="lobbyPanel" class="panel lobby-panel hidden">
+          <div class="lobby-head">
+            <div>
+              <p class="eyebrow">Waiting lobby</p>
+              <h2 id="lobbyTitle">Room</h2>
+            </div>
+            <button id="leaveLobby" type="button">Leave</button>
+          </div>
+
+          <div class="room-key-card">
+            <span>Room key</span>
+            <strong id="roomKeyLabel">PUBLIC</strong>
+            <button id="copyRoomKey" type="button">Copy</button>
+          </div>
+
+          <div>
+            <h3>Players</h3>
+            <div id="lobbyPlayers" class="player-list"></div>
+          </div>
+
+          <button id="startMatch" class="primary" type="button">Start Match</button>
+          <p id="lobbyMessage" class="message" role="status"></p>
+        </section>
+
+        <section id="gamePanel" class="game-panel hidden">
+          <canvas id="gameCanvas" width="1280" height="720"></canvas>
+
+          <div class="hud top-left">
+            <strong id="matchClock">03:00</strong>
+            <span id="ping">Ping 0ms</span>
+          </div>
+
+          <div class="hud health-card">
+            <span>Health</span>
+            <div class="health-track"><div id="healthFill"></div></div>
+          </div>
+
+          <aside class="scoreboard">
+            <h3>Scoreboard</h3>
+            <div id="scoreboardRows"></div>
+          </aside>
+
+          <aside class="kill-feed" id="killFeed"></aside>
+
+          <div id="winnerScreen" class="winner hidden">
+            <h2 id="winnerTitle">Winner</h2>
+            <button id="backToLobby" type="button">Back to Lobby</button>
+          </div>
+
+          <div class="mobile-controls" aria-label="Mobile controls">
+            <button data-mobile="up" type="button">W</button>
+            <button data-mobile="left" type="button">A</button>
+            <button data-mobile="fire" type="button">Fire</button>
+            <button data-mobile="right" type="button">D</button>
+            <button data-mobile="down" type="button">S</button>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script type="module" src="/game/game.js"></script>
+  </body>
+</html>
